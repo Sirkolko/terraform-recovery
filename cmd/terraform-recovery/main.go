@@ -214,7 +214,7 @@ func cmdServe(ctx context.Context, args []string, stdout, stderr io.Writer) erro
 	if err != nil {
 		return err
 	}
-	url := srv.URL(ln)
+	url := srv.LoginURL()
 	mode := "normal — writes only recovery.import.tf and .recovery/; apply needs explicit approval"
 	if c.dryRun {
 		mode = "dry run — read-only, nothing is written and terraform is never run"
@@ -223,15 +223,30 @@ func cmdServe(ctx context.Context, args []string, stdout, stderr io.Writer) erro
 	fmt.Fprintf(stdout, "  Project: %s\n", svc.ProjectDir())
 	fmt.Fprintf(stdout, "  Mode:    %s\n", mode)
 	fmt.Fprintf(stdout, "  Privacy: runs locally, no telemetry, no external services\n\n")
-	fmt.Fprintf(stdout, "  Open this URL in your browser (it contains a one-time access token):\n\n    %s\n\n", url)
+	fmt.Fprintf(stdout, "  Open this one-time login link in your browser (it stops working once used):\n\n    %s\n\n", url)
+	if isTerminal(os.Stdin) {
+		fmt.Fprintf(stdout, "Press Enter to print a new login link (for example for another browser). ")
+		go printLoginLinks(os.Stdin, stdout, srv)
+	}
 	fmt.Fprintf(stdout, "Press Ctrl+C to stop.\n")
 	if *open {
 		openBrowser(url)
 	}
 	err = srv.Serve(ctx, ln)
-	fmt.Fprintln(stdout, "\nStopping… (waiting for any running Terraform operation to finish)")
+	// A second Ctrl+C exits immediately. Terraform runs in its own process
+	// group, so even then a running import apply is not interrupted.
+	signal.Reset(os.Interrupt, syscall.SIGTERM)
+	fmt.Fprintln(stdout, "\nStopping… running scans and plans are cancelled; a running import apply is allowed to finish (press Ctrl+C again to exit immediately).")
 	svc.Close()
 	return err
+}
+
+// printLoginLinks prints a new one-time login link whenever Enter is pressed.
+func printLoginLinks(in io.Reader, out io.Writer, srv *server.Server) {
+	lines := bufio.NewScanner(in)
+	for lines.Scan() {
+		fmt.Fprintf(out, "\n  New one-time login link:\n\n    %s\n\n", srv.NewLoginURL())
+	}
 }
 
 func openBrowser(url string) {
@@ -495,11 +510,24 @@ func cmdApply(ctx context.Context, args []string, stdout, stderr io.Writer) (int
 		return exitError, err
 	}
 	fmt.Fprintf(stdout, "\nState recovered: %d resource(s) imported.\n", len(res.Apply.Imported))
-	fmt.Fprintln(stdout, "Run terraform plan to confirm there are no remaining changes. recovery.import.tf can now be deleted.")
+	if res.Excluded > 0 {
+		fmt.Fprintf(stdout, "\nWARNING: recovery is NOT complete. %d Terraform resource(s) were left out of this import,\n", res.Excluded)
+		fmt.Fprintln(stdout, "and a normal terraform plan will propose to create them. Map or resolve them before using")
+		fmt.Fprintln(stdout, "this configuration normally.")
+	}
+	fmt.Fprintln(stdout, "Run a full terraform plan (without -target) to confirm there are no remaining changes. recovery.import.tf can now be deleted.")
 	return exitOK, nil
 }
 
+// isTerminal reports whether f is an interactive terminal. /dev/null is a
+// character device too, so it is excluded explicitly.
 func isTerminal(f *os.File) bool {
 	info, err := f.Stat()
-	return err == nil && info.Mode()&os.ModeCharDevice != 0
+	if err != nil || info.Mode()&os.ModeCharDevice == 0 {
+		return false
+	}
+	if null, err := os.Stat(os.DevNull); err == nil && os.SameFile(info, null) {
+		return false
+	}
+	return true
 }

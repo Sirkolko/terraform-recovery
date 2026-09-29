@@ -565,43 +565,57 @@ func SupportedTypes() []string {
 // display, even for types without rules.
 var genericAttrs = map[string]bool{"name": true, "bucket": true, "identifier": true, "description": true}
 
-// WantAttribute reports whether the value of a Terraform attribute should be
-// extracted from the configuration. Only attributes used for matching or
-// for computing import IDs are read; everything else (including secrets
-// such as passwords) is never evaluated into the model.
-func WantAttribute(resourceType, attr string) bool {
-	if genericAttrs[attr] {
-		return true
+// wantedAttrs lists every attribute path the engine uses for a Terraform
+// type: names, compared attributes, relations and import ID inputs.
+func wantedAttrs(resourceType string) []string {
+	var out []string
+	for a := range genericAttrs {
+		out = append(out, a)
 	}
 	if r, ok := ruleByType[resourceType]; ok {
-		if attr == r.NameAttr || attr == r.NamePrefixAttr {
-			return true
-		}
+		out = append(out, r.NameAttr, r.NamePrefixAttr)
 		for _, a := range r.Attrs {
-			if a.Attr == attr {
-				return true
-			}
+			out = append(out, a.Attr)
 		}
 		for _, rel := range r.Relations {
-			if rel.Attr == attr {
-				return true
-			}
+			out = append(out, rel.Attr)
 		}
 	}
 	if d, ok := derivedRules[resourceType]; ok {
-		for _, a := range d.Attrs {
-			if a == attr {
-				return true
-			}
-		}
+		out = append(out, d.Attrs...)
 	}
 	for _, r := range rules {
 		for _, a := range r.Associations {
 			for _, t := range a.AssocTypes {
-				if t == resourceType && (attr == a.SelfAttr || attr == a.OtherAttr) {
-					return true
+				if t == resourceType {
+					out = append(out, a.SelfAttr, a.OtherAttr)
 				}
 			}
+		}
+	}
+	return out
+}
+
+// WantAttribute reports whether the value of a Terraform attribute should be
+// extracted from the configuration. Only attributes used for matching or
+// for computing import IDs are extracted; everything else (including secrets
+// such as passwords) is never evaluated into the model.
+func WantAttribute(resourceType, attr string) bool {
+	for _, a := range wantedAttrs(resourceType) {
+		if a != "" && a == attr {
+			return true
+		}
+	}
+	return false
+}
+
+// WantUnder reports whether a wanted attribute is nested below path, for
+// example health_check.path below health_check.
+func WantUnder(resourceType, path string) bool {
+	prefix := path + "."
+	for _, a := range wantedAttrs(resourceType) {
+		if strings.HasPrefix(a, prefix) {
+			return true
 		}
 	}
 	return false

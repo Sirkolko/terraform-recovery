@@ -47,9 +47,9 @@ govulncheck -mode=binary terraform-recovery
 
 ## Design
 
-The tool is designed to have a small attack surface: it runs locally, its web UI listens on
-the loopback interface only and is protected by a one-time token, CSRF checks and a strict
-Content-Security-Policy, it never asks for or stores credentials, its AWS calls are
-read-only, and every change to the Terraform state is performed by Terraform after explicit
-approval. See the [Security and privacy](README.md#security-and-privacy) section of the
-README.
+The tool is designed to have a small attack surface: it runs locally; its web UI listens
+on the loopback interface only and is protected by a one-time login link, a separate
+session cookie, Fetch Metadata/Origin and CSRF checks and a strict Content-Security-Policy;
+it never asks for or stores credentials; its AWS calls are read-only; and every change to
+the Terraform state is performed by Terraform after explicit approval. See the
+[Security and privacy](README.md#security-and-privacy) section of the README.

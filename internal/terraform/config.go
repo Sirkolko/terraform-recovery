@@ -38,29 +38,33 @@ const (
 
 // moduleConfig is the static content of one module directory.
 type moduleConfig struct {
-	dir         string
-	files       int
-	variables   map[string]*variableConfig
-	locals      map[string]hcl.Expression
-	outputs     map[string]hcl.Expression
-	moduleCalls []*moduleCall
-	resources   []*resourceConfig
-	providers   []*providerConfig
-	imports     []*importConfig
-	backend     string
-	hasCloud    bool
-	requiredVer string
+	dir       string
+	files     int
+	variables map[string]*variableConfig
+	locals    map[string]hcl.Expression
+	outputs   map[string]hcl.Expression
+	// hiddenOutputs are sensitive or ephemeral outputs: never evaluated.
+	hiddenOutputs map[string]bool
+	moduleCalls   []*moduleCall
+	resources     []*resourceConfig
+	providers     []*providerConfig
+	imports       []*importConfig
+	backend       string
+	hasCloud      bool
+	requiredVer   string
 	// attrNames holds every attribute name used in a traversal anywhere in
 	// the module. Resource placeholder objects expose exactly these names.
 	attrNames map[string]bool
 }
 
 type variableConfig struct {
-	name      string
-	def       hcl.Expression
-	typeExpr  hcl.Expression
-	sensitive bool
-	rng       hcl.Range
+	name     string
+	def      hcl.Expression
+	typeExpr hcl.Expression
+	// hidden variables are sensitive or ephemeral: their values are never
+	// used, they evaluate to unknown.
+	hidden bool
+	rng    hcl.Range
 }
 
 type moduleCall struct {
@@ -166,11 +170,12 @@ func (l *loader) parseModule(dir string) *moduleConfig {
 		return cfg
 	}
 	cfg := &moduleConfig{
-		dir:       dir,
-		variables: map[string]*variableConfig{},
-		locals:    map[string]hcl.Expression{},
-		outputs:   map[string]hcl.Expression{},
-		attrNames: map[string]bool{},
+		dir:           dir,
+		variables:     map[string]*variableConfig{},
+		locals:        map[string]hcl.Expression{},
+		outputs:       map[string]hcl.Expression{},
+		hiddenOutputs: map[string]bool{},
+		attrNames:     map[string]bool{},
 	}
 	for _, n := range defaultAttrNames {
 		cfg.attrNames[n] = true
@@ -197,7 +202,8 @@ func (l *loader) parseModule(dir string) *moduleConfig {
 		}
 		if isOverrideFile(name) {
 			l.addDiag(SeverityWarning, "Override file ignored",
-				"Override files are not merged by this tool; attributes set there are not used for matching.",
+				"Override files are not merged by this tool, so matching uses the configuration without them. "+
+					"Terraform's plan does use them: any difference shows up as a planned change and blocks the import.",
 				l.rel(path), 0)
 			continue
 		}
@@ -240,10 +246,12 @@ func (l *loader) parseFile(cfg *moduleConfig, path string) {
 			}
 		case "output":
 			oc, _, _ := block.Body.PartialContent(&hcl.BodySchema{
-				Attributes: []hcl.AttributeSchema{{Name: "value"}},
+				Attributes: []hcl.AttributeSchema{{Name: "value"}, {Name: "sensitive"}, {Name: "ephemeral"}},
 			})
 			if attr, ok := oc.Attributes["value"]; ok {
-				cfg.outputs[block.Labels[0]] = attr.Expr
+				name := block.Labels[0]
+				cfg.outputs[name] = attr.Expr
+				cfg.hiddenOutputs[name] = literalTrue(oc.Attributes["sensitive"]) || literalTrue(oc.Attributes["ephemeral"])
 			}
 		case "module":
 			l.decodeModuleCall(cfg, block)
@@ -321,7 +329,7 @@ func (l *loader) decodeProvider(cfg *moduleConfig, block *hcl.Block) {
 
 func (l *loader) decodeVariable(cfg *moduleConfig, block *hcl.Block) {
 	vc, _, _ := block.Body.PartialContent(&hcl.BodySchema{
-		Attributes: []hcl.AttributeSchema{{Name: "default"}, {Name: "type"}, {Name: "sensitive"}},
+		Attributes: []hcl.AttributeSchema{{Name: "default"}, {Name: "type"}, {Name: "sensitive"}, {Name: "ephemeral"}},
 	})
 	v := &variableConfig{name: block.Labels[0], rng: block.DefRange}
 	if attr, ok := vc.Attributes["default"]; ok {
@@ -330,11 +338,7 @@ func (l *loader) decodeVariable(cfg *moduleConfig, block *hcl.Block) {
 	if attr, ok := vc.Attributes["type"]; ok {
 		v.typeExpr = attr.Expr
 	}
-	if attr, ok := vc.Attributes["sensitive"]; ok {
-		if val, diags := attr.Expr.Value(nil); !diags.HasErrors() && val.Type() == cty.Bool && val.IsKnown() && !val.IsNull() {
-			v.sensitive = val.True()
-		}
-	}
+	v.hidden = literalTrue(vc.Attributes["sensitive"]) || literalTrue(vc.Attributes["ephemeral"])
 	cfg.variables[v.name] = v
 }
 
@@ -432,6 +436,15 @@ func traversalRef(expr hcl.Expression) (string, error) {
 		}
 	}
 	return strings.Join(parts, "."), nil
+}
+
+// literalTrue reports whether an optional attribute is the literal true.
+func literalTrue(attr *hcl.Attribute) bool {
+	if attr == nil {
+		return false
+	}
+	v, diags := attr.Expr.Value(nil)
+	return !diags.HasErrors() && v.Type() == cty.Bool && v.IsKnown() && !v.IsNull() && v.True()
 }
 
 // literalString evaluates an expression that must not reference anything.

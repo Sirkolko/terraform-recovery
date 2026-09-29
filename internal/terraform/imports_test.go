@@ -147,7 +147,7 @@ func TestAnalyzePlan(t *testing.T) {
 }
 
 func TestAnalyzePlanImportOnly(t *testing.T) {
-	plan := `{"resource_changes": [
+	plan := `{"format_version": "1.2", "resource_changes": [
 	  {"address": "aws_vpc.main", "mode": "managed", "change": {"actions": ["no-op"], "importing": {"id": "vpc-1"}}},
 	  {"address": "data.aws_ami.x", "mode": "data", "change": {"actions": ["read"]}}
 	]}`
@@ -157,6 +157,50 @@ func TestAnalyzePlanImportOnly(t *testing.T) {
 	}
 	if !a.ImportOnly || a.Import != 1 {
 		t.Errorf("expected import-only plan: %+v", a)
+	}
+}
+
+func TestAnalyzePlanFailsClosed(t *testing.T) {
+	importOnly := func(extra string) string {
+		return `{"format_version": "1.2", ` + extra + `"resource_changes": [
+		  {"address": "aws_vpc.main", "mode": "managed", "change": {"actions": ["no-op"], "importing": {"id": "vpc-1"}}}]}`
+	}
+	expected := map[string]string{"aws_vpc.main": "vpc-1"}
+	for name, plan := range map[string]string{
+		"not applyable": importOnly(`"applyable": false, `),
+		"deferred":      importOnly(`"deferred_changes": [{"reason": "provider_config_unknown"}], `),
+		"actions":       importOnly(`"action_invocations": [{"address": "action.aws_lambda_invoke.notify"}], `),
+	} {
+		a, err := AnalyzePlan([]byte(plan), expected)
+		if err != nil {
+			t.Fatalf("%s: %v", name, err)
+		}
+		if a.ImportOnly || len(a.Blockers) == 0 {
+			t.Errorf("%s must block the apply: %+v", name, a)
+		}
+	}
+	// Terraform marks plans limited with -target as incomplete: reported,
+	// but left to the caller, which knows whether it used -target.
+	if a, err := AnalyzePlan([]byte(importOnly(`"complete": false, `)), expected); err != nil || !a.Incomplete || !a.ImportOnly {
+		t.Errorf("incomplete plan: %+v %v", a, err)
+	}
+	// Action types the tool does not know count as changes.
+	unknown := `{"format_version": "1.2", "resource_changes": [
+	  {"address": "aws_vpc.main", "mode": "managed", "change": {"actions": ["transmogrify"], "importing": {"id": "vpc-1"}}}]}`
+	if a, err := AnalyzePlan([]byte(unknown), expected); err != nil || a.ImportOnly || a.Change != 1 {
+		t.Errorf("unknown action: %+v %v", a, err)
+	}
+	// Unknown or missing plan format versions are refused, not guessed.
+	for _, v := range []string{`"2.0"`, `""`} {
+		if _, err := AnalyzePlan([]byte(`{"format_version": `+v+`, "resource_changes": []}`), nil); err == nil {
+			t.Errorf("format version %s must be refused", v)
+		}
+	}
+	// What Terraform 1.14 writes for an import-only plan: output changes do
+	// not touch infrastructure and do not block.
+	ok := importOnly(`"applyable": true, "complete": true, "output_changes": {"x": {"actions": ["create"]}}, `)
+	if a, err := AnalyzePlan([]byte(ok), expected); err != nil || !a.ImportOnly {
+		t.Errorf("valid import-only plan: %+v %v", a, err)
 	}
 }
 

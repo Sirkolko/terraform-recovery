@@ -21,9 +21,10 @@ vet:
 	gofmt -l . | (! grep .)
 
 # Reports known vulnerabilities (Go vulnerability database) that the code
-# can actually reach, including the Go standard library.
+# can actually reach, including the Go standard library. The govulncheck
+# version is pinned in go.mod (tool directive) and updated by Dependabot.
 vulncheck:
-	go run golang.org/x/vuln/cmd/govulncheck@latest ./...
+	go tool govulncheck ./...
 
 # The demo is read-only: it uses the bundled inventory and never runs Terraform.
 demo: build

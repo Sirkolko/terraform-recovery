@@ -36,11 +36,15 @@ type Options struct {
 	Workspace string
 	// Environ supplies TF_VAR_* and TF_WORKSPACE; nil means os.Environ().
 	Environ []string
-	// WantAttribute selects the attribute values that are extracted. Values
-	// of other attributes are never read, which keeps secrets such as
-	// passwords out of memory, logs and the UI. References are always
-	// recorded because they only contain resource addresses.
+	// WantAttribute selects the attribute values that are extracted.
+	// Attributes that are not wanted, have nothing wanted nested below them
+	// (WantUnder) and cannot refer to another resource are not evaluated at
+	// all, so secrets such as literal passwords never become values in the
+	// model. References are always recorded: they only contain addresses.
 	WantAttribute func(resourceType, attr string) bool
+	// WantUnder reports whether a wanted attribute is nested below path,
+	// such as health_check.path below health_check. Nil means yes.
+	WantUnder func(resourceType, path string) bool
 	// InstanceKeys supplies instance keys, keyed by resource address without
 	// key, for resources whose count/for_each cannot be evaluated.
 	InstanceKeys map[string][]string
@@ -254,6 +258,13 @@ func (l *loader) want(resourceType, attr string) bool {
 	return attr == "name" || attr == "bucket" || attr == "identifier"
 }
 
+func (l *loader) wantUnder(resourceType, path string) bool {
+	if l.opts.WantUnder != nil {
+		return l.opts.WantUnder(resourceType, path)
+	}
+	return true
+}
+
 // providerInfo returns the provider configuration with the given address,
 // creating an implicit (environment-configured) one if it is not declared.
 func (l *loader) providerInfo(addr string) *ProviderInfo {
@@ -330,7 +341,7 @@ func (l *loader) rootVariables(cfg *moduleConfig) map[string]cty.Value {
 			}
 		}
 		v = l.convertVariable(v, decl)
-		if decl.sensitive {
+		if decl.hidden {
 			v = cty.DynamicVal
 		}
 		out[name] = v
@@ -588,6 +599,10 @@ func (m *moduleInstance) evaluate() {
 	ctx := m.evalContext()
 	outs := map[string]cty.Value{}
 	for _, name := range sortedKeys(m.cfg.outputs) {
+		if m.cfg.hiddenOutputs[name] {
+			outs[name] = cty.DynamicVal // sensitive and ephemeral outputs are never evaluated
+			continue
+		}
 		outs[name] = m.eval(m.cfg.outputs[name], ctx)
 	}
 	m.outputs = cty.ObjectVal(outs)
@@ -714,7 +729,7 @@ func (m *moduleInstance) moduleInputs(child *moduleConfig, call *moduleCall, ctx
 			v = cty.DynamicVal
 		}
 		v = m.l.convertVariable(v, decl)
-		if decl.sensitive {
+		if decl.hidden {
 			v = cty.DynamicVal
 		}
 		inputs[name] = v

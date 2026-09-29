@@ -29,6 +29,8 @@ type PlanRecord struct {
 	Analysis   *terraform.PlanAnalysis `json:"analysis,omitempty"`
 	Validation []terraform.Diagnostic  `json:"validation,omitempty"`
 	Backups    []string                `json:"backups,omitempty"`
+	// Excluded is the number of Terraform resources left out of the import.
+	Excluded int `json:"excluded"`
 	// Profile is the AWS profile Terraform ran with ("" = environment).
 	Profile string `json:"profile,omitempty"`
 	// Account is the account that was scanned; imported resources must be in it.
@@ -59,6 +61,12 @@ func (p *PlanRecord) CanApply() (bool, string) {
 		return false, "Terraform reported errors while planning."
 	case len(p.Analysis.MismatchedImports) > 0:
 		return false, "Terraform planned to import different IDs than the ones generated."
+	case len(p.Analysis.Blockers) > 0:
+		return false, strings.Join(p.Analysis.Blockers, " ") + " Import has NOT been applied."
+	case p.Analysis.Incomplete && !p.Targeted:
+		// Terraform marks every -target plan as incomplete; any other
+		// incomplete plan left out changes nobody asked to leave out.
+		return false, "Terraform reports that the plan is incomplete. Import has NOT been applied."
 	case p.foreignAccount() != "":
 		return false, fmt.Sprintf("Terraform read the imported resources from account %s, but the AWS scan was of account %s. Terraform uses different credentials than the discovery; fix the provider configuration or the profile and plan again.",
 			p.foreignAccount(), p.Account)
@@ -201,6 +209,7 @@ func (s *Service) runPlan(ctx context.Context, job *Job) (*PlanRecord, error) {
 		return fail(fmt.Errorf("%w: every confirmed mapping is already in the Terraform state", ErrNothingToImport))
 	}
 	rec.Imports, rec.ImportHash, rec.Targeted = set.Specs, set.Hash, len(set.Targets) > 0
+	rec.Excluded = len(set.Excluded)
 
 	hcl, err := terraform.RenderImports(set.Specs, append(importHeader(), "Snapshot: "+filepath.Join(filepath.Base(s.store.dir), id)))
 	if err != nil {
@@ -257,11 +266,10 @@ func (s *Service) runPlan(ctx context.Context, job *Job) (*PlanRecord, error) {
 		return fail(err)
 	}
 
+	// The JSON plan contains every planned value in clear text, including
+	// sensitive ones. It is analysed in memory and never written to disk.
 	data, err := tf.ShowJSON(ctx, planFile)
 	if err != nil {
-		return fail(err)
-	}
-	if err := os.WriteFile(filepath.Join(dir, "plan.json"), data, 0o600); err != nil {
 		return fail(err)
 	}
 	expected := map[string]string{}
@@ -302,8 +310,20 @@ func (s *Service) finishPlan(rec *PlanRecord, job *Job) {
 		job.Printf("WARNING: %v", err)
 	}
 	s.mu.Lock()
+	old := s.plan
 	s.plan = rec
 	s.mu.Unlock()
+	if old != nil && old.ID != rec.ID && !old.Applied {
+		removePlanFile(old) // a superseded plan can never be applied
+	}
+}
+
+// removePlanFile deletes a saved plan: it contains resource values, possibly
+// sensitive ones, in clear text and is only needed until it is applied.
+func removePlanFile(rec *PlanRecord) {
+	if rec.PlanFile != "" {
+		_ = os.Remove(rec.PlanFile)
+	}
 }
 
 // PlanText returns the human-readable plan saved with a plan record.
@@ -431,6 +451,8 @@ func (s *Service) runApply(ctx context.Context, job *Job, rec *PlanRecord) (*Pla
 	if applyErr != nil {
 		return rec, applyErr
 	}
+	removePlanFile(rec)
+	job.Printf("Removed the applied plan file; it contains resource values in clear text.")
 	if listErr != nil {
 		return rec, fmt.Errorf("apply finished but the state could not be verified: %w", listErr)
 	}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"io"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -68,9 +69,18 @@ func do(h http.Handler, method, target, host string, body string, headers map[st
 	return rec
 }
 
+// freshToken issues a new one-time login token.
+func freshToken(s *Server) string {
+	s.NewLoginURL()
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.loginToken
+}
+
 func login(t *testing.T, s *Server, h http.Handler, host string) *http.Cookie {
 	t.Helper()
-	rec := do(h, "GET", "/?token="+s.token, host, "", nil, nil)
+	token := freshToken(s)
+	rec := do(h, "GET", "/?token="+token, host, "", nil, nil)
 	if rec.Code != http.StatusSeeOther || rec.Header().Get("Location") != "/" {
 		t.Fatalf("login = %d %s", rec.Code, rec.Header().Get("Location"))
 	}
@@ -78,7 +88,18 @@ func login(t *testing.T, s *Server, h http.Handler, host string) *http.Cookie {
 	if len(cookies) != 1 || !cookies[0].HttpOnly || cookies[0].SameSite != http.SameSiteStrictMode {
 		t.Fatalf("session cookie = %+v", cookies)
 	}
+	if cookies[0].Value == token {
+		t.Fatal("the session cookie must not be the login token")
+	}
 	return cookies[0]
+}
+
+// browser returns the headers a browser sends with a same-origin fetch.
+func browser(s *Server, host string) map[string]string {
+	return map[string]string{
+		"Content-Type": "application/json", "X-CSRF-Token": s.csrf,
+		"Origin": "http://" + host, "Sec-Fetch-Site": "same-origin",
+	}
 }
 
 func TestAuthentication(t *testing.T) {
@@ -98,23 +119,58 @@ func TestAuthentication(t *testing.T) {
 		t.Errorf("CSP = %q", csp)
 	}
 	page := do(h, "GET", "/", host, "", nil, cookie)
-	if page.Code != http.StatusOK || !strings.Contains(page.Body.String(), s.csrf) || strings.Contains(page.Body.String(), s.token) {
-		t.Errorf("index must embed the CSRF token but never the session token")
+	if page.Code != http.StatusOK || !strings.Contains(page.Body.String(), s.csrf) || strings.Contains(page.Body.String(), cookie.Value) {
+		t.Errorf("index must embed the CSRF token but never the session ID")
 	}
 	if rec := do(h, "GET", "/static/app.js", host, "", nil, cookie); rec.Code != http.StatusOK || !strings.HasPrefix(rec.Header().Get("Content-Type"), "text/javascript") {
 		t.Errorf("static = %d %s", rec.Code, rec.Header().Get("Content-Type"))
 	}
 }
 
+func TestOneTimeLoginLink(t *testing.T) {
+	s, h, host := newTestServer(t)
+	token := freshToken(s)
+	first := do(h, "GET", "/?token="+token, host, "", nil, nil)
+	if first.Code != http.StatusSeeOther {
+		t.Fatalf("first login = %d", first.Code)
+	}
+	// A leaked or reused link is worthless after the first login.
+	if rec := do(h, "GET", "/?token="+token, host, "", nil, nil); rec.Code != http.StatusUnauthorized {
+		t.Errorf("reused login link = %d", rec.Code)
+	}
+	// The token itself is not a session.
+	fake := &http.Cookie{Name: s.cookieName(), Value: token}
+	if rec := do(h, "GET", "/api/session", host, "", nil, fake); rec.Code != http.StatusUnauthorized {
+		t.Errorf("login token accepted as session = %d", rec.Code)
+	}
+	// The browser that logged in keeps working, also when it reopens the old link.
+	cookie := first.Result().Cookies()[0]
+	if rec := do(h, "GET", "/api/session", host, "", nil, cookie); rec.Code != http.StatusOK {
+		t.Errorf("session after login = %d", rec.Code)
+	}
+	if rec := do(h, "GET", "/?token="+token, host, "", nil, cookie); rec.Code != http.StatusSeeOther {
+		t.Errorf("logged-in browser reopening the link = %d", rec.Code)
+	}
+	// A new link replaces an unused one.
+	unused := freshToken(s)
+	newer := freshToken(s)
+	if rec := do(h, "GET", "/?token="+unused, host, "", nil, nil); rec.Code != http.StatusUnauthorized {
+		t.Errorf("replaced link = %d", rec.Code)
+	}
+	if rec := do(h, "GET", "/?token="+newer, host, "", nil, nil); rec.Code != http.StatusSeeOther {
+		t.Errorf("new link = %d", rec.Code)
+	}
+}
+
 func TestDNSRebindingProtection(t *testing.T) {
 	s, h, _ := newTestServer(t)
 	for _, host := range []string{"evil.example:4242", "127.0.0.1:9999", "attacker.localhost:4242"} {
-		if rec := do(h, "GET", "/?token="+s.token, host, "", nil, nil); rec.Code != http.StatusMisdirectedRequest {
+		if rec := do(h, "GET", "/?token="+freshToken(s), host, "", nil, nil); rec.Code != http.StatusMisdirectedRequest {
 			t.Errorf("host %s = %d", host, rec.Code)
 		}
 	}
 	for _, host := range []string{"127.0.0.1:4242", "localhost:4242", "[::1]:4242"} {
-		if rec := do(h, "GET", "/?token="+s.token, host, "", nil, nil); rec.Code != http.StatusSeeOther {
+		if rec := do(h, "GET", "/?token="+freshToken(s), host, "", nil, nil); rec.Code != http.StatusSeeOther {
 			t.Errorf("host %s = %d", host, rec.Code)
 		}
 	}
@@ -124,17 +180,33 @@ func TestCSRFProtection(t *testing.T) {
 	s, h, host := newTestServer(t)
 	cookie := login(t, s, h, host)
 	body := `{"kind":"terraform","key":"aws_vpc.main","reason":"x"}`
-	good := map[string]string{"Content-Type": "application/json", "X-CSRF-Token": s.csrf, "Origin": "http://" + host}
+	good := browser(s, host)
+	json := map[string]string{"Content-Type": "application/json", "X-CSRF-Token": s.csrf}
+	with := func(extra map[string]string) map[string]string {
+		out := map[string]string{}
+		for k, v := range json {
+			out[k] = v
+		}
+		for k, v := range extra {
+			out[k] = v
+		}
+		return out
+	}
 
 	cases := []struct {
 		name    string
 		headers map[string]string
 		want    int
 	}{
-		{"no csrf token", map[string]string{"Content-Type": "application/json"}, http.StatusForbidden},
-		{"wrong csrf token", map[string]string{"Content-Type": "application/json", "X-CSRF-Token": "nope"}, http.StatusForbidden},
-		{"cross origin", map[string]string{"Content-Type": "application/json", "X-CSRF-Token": s.csrf, "Origin": "https://evil.example"}, http.StatusForbidden},
-		{"form post", map[string]string{"Content-Type": "application/x-www-form-urlencoded", "X-CSRF-Token": s.csrf}, http.StatusUnsupportedMediaType},
+		{"no csrf token", map[string]string{"Content-Type": "application/json", "Origin": "http://" + host}, http.StatusForbidden},
+		{"wrong csrf token", map[string]string{"Content-Type": "application/json", "X-CSRF-Token": "nope", "Origin": "http://" + host}, http.StatusForbidden},
+		{"cross origin", with(map[string]string{"Origin": "https://evil.example"}), http.StatusForbidden},
+		{"cross site fetch metadata", with(map[string]string{"Sec-Fetch-Site": "cross-site"}), http.StatusForbidden},
+		{"same site but other origin", with(map[string]string{"Sec-Fetch-Site": "same-site", "Origin": "http://" + host}), http.StatusForbidden},
+		{"no origin and no fetch metadata", json, http.StatusForbidden},
+		{"form post", with(map[string]string{"Content-Type": "application/x-www-form-urlencoded", "Origin": "http://" + host}), http.StatusUnsupportedMediaType},
+		{"fetch metadata only", with(map[string]string{"Sec-Fetch-Site": "same-origin"}), http.StatusOK},
+		{"origin only", with(map[string]string{"Origin": "http://" + host}), http.StatusOK},
 		{"valid", good, http.StatusOK},
 	}
 	for _, c := range cases {
@@ -155,7 +227,7 @@ func TestCSRFProtection(t *testing.T) {
 func TestPlanRefusedWithoutMappings(t *testing.T) {
 	s, h, host := newTestServer(t)
 	cookie := login(t, s, h, host)
-	headers := map[string]string{"Content-Type": "application/json", "X-CSRF-Token": s.csrf}
+	headers := browser(s, host)
 	rec := do(h, "POST", "/api/plan", host, `{}`, headers, cookie)
 	if rec.Code != http.StatusBadRequest || !strings.Contains(rec.Body.String(), "No confirmed mappings") {
 		t.Errorf("plan = %d %s", rec.Code, rec.Body.String())
@@ -174,12 +246,17 @@ func TestListenRefusesNonLoopback(t *testing.T) {
 			t.Errorf("listen on %s must be refused", addr)
 		}
 	}
-	ln, err := s.Listen("127.0.0.1:0")
+	// "localhost" binds the loopback address itself, whatever it resolves to.
+	ln, err := s.Listen("localhost:0")
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer ln.Close()
-	if !strings.HasPrefix(s.URL(ln), "http://127.0.0.1:") || !strings.Contains(s.URL(ln), "token=") {
-		t.Errorf("url = %s", s.URL(ln))
+	if ip := ln.Addr().(*net.TCPAddr).IP; !ip.Equal(net.IPv4(127, 0, 0, 1)) {
+		t.Errorf("localhost bound to %s", ip)
+	}
+	url := s.LoginURL()
+	if !strings.HasPrefix(url, "http://127.0.0.1:") || !strings.Contains(url, "token=") {
+		t.Errorf("url = %s", url)
 	}
 }

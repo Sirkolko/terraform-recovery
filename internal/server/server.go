@@ -1,6 +1,7 @@
 // Package server exposes the recovery session as a local web UI. It binds to
 // the loopback interface only and protects the API against other websites
-// (DNS rebinding, CSRF) with a Host check, a session token and a CSRF token.
+// (DNS rebinding, CSRF) with a Host check, a session cookie obtained with a
+// one-time login link, Fetch Metadata/Origin checks and a CSRF token.
 package server
 
 import (
@@ -19,6 +20,7 @@ import (
 	"path"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/Sirkolko/terraform-recovery/internal/recovery"
@@ -27,17 +29,28 @@ import (
 
 const maxBodyBytes = 1 << 20
 
+const loginHint = "Open the one-time login link printed in the terminal where terraform-recovery runs. " +
+	"Each link works once; press Enter in that terminal to print a new one."
+
 // Server serves the web UI and JSON API for one recovery session.
 type Server struct {
 	svc     *recovery.Service
 	log     *slog.Logger
 	version string
-	token   string
 	csrf    string
 	port    int
+	addr    string
 	tmpl    *template.Template
 	static  fs.FS
 	handler http.Handler
+
+	mu sync.Mutex
+	// loginToken is the one-time token of the current login link; it is
+	// cleared when used. Sessions are separate random IDs, so a login link
+	// that leaks (terminal output, browser history, process list) is useless
+	// once it has been used.
+	loginToken string
+	sessions   map[string]bool
 }
 
 func randomToken() string {
@@ -61,7 +74,10 @@ func New(svc *recovery.Service, logger *slog.Logger, version string) (*Server, e
 	if logger == nil {
 		logger = slog.Default()
 	}
-	s := &Server{svc: svc, log: logger, version: version, token: randomToken(), csrf: randomToken(), tmpl: tmpl, static: static}
+	s := &Server{
+		svc: svc, log: logger, version: version, csrf: randomToken(), tmpl: tmpl, static: static,
+		loginToken: randomToken(), sessions: map[string]bool{},
+	}
 	s.handler = s.routes()
 	return s, nil
 }
@@ -69,27 +85,40 @@ func New(svc *recovery.Service, logger *slog.Logger, version string) (*Server, e
 // Listen binds a loopback address. Non-loopback addresses are refused: the
 // UI can trigger Terraform runs and must never be reachable from the network.
 func (s *Server) Listen(addr string) (net.Listener, error) {
-	host, _, err := net.SplitHostPort(addr)
+	host, port, err := net.SplitHostPort(addr)
 	if err != nil {
 		return nil, fmt.Errorf("invalid listen address %q: %w", addr, err)
 	}
-	if host != "localhost" {
-		ip := net.ParseIP(host)
-		if ip == nil || !ip.IsLoopback() {
-			return nil, fmt.Errorf("refusing to listen on %q: only loopback addresses (127.0.0.1, ::1, localhost) are allowed", addr)
-		}
+	if host == "localhost" {
+		// Bind the loopback address itself instead of whatever "localhost"
+		// resolves to on this machine.
+		addr = net.JoinHostPort("127.0.0.1", port)
+	} else if ip := net.ParseIP(host); ip == nil || !ip.IsLoopback() {
+		return nil, fmt.Errorf("refusing to listen on %q: only loopback addresses (127.0.0.1, ::1, localhost) are allowed", addr)
 	}
 	ln, err := net.Listen("tcp", addr)
 	if err != nil {
 		return nil, err
 	}
 	s.port = ln.Addr().(*net.TCPAddr).Port
+	s.addr = ln.Addr().String()
 	return ln, nil
 }
 
-// URL returns the one-time login URL for the browser.
-func (s *Server) URL(ln net.Listener) string {
-	return fmt.Sprintf("http://%s/?token=%s", ln.Addr().String(), s.token)
+// LoginURL returns the login link with the current one-time token.
+func (s *Server) LoginURL() string {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return fmt.Sprintf("http://%s/?token=%s", s.addr, s.loginToken)
+}
+
+// NewLoginURL replaces the login token, used or not, with a new one-time
+// token and returns its link. Existing browser sessions stay valid.
+func (s *Server) NewLoginURL() string {
+	s.mu.Lock()
+	s.loginToken = randomToken()
+	s.mu.Unlock()
+	return s.LoginURL()
 }
 
 // Serve serves until ctx is cancelled.
@@ -144,15 +173,14 @@ func (s *Server) secure(next http.Handler) http.Handler {
 			s.login(w, r)
 			return
 		}
-		c, err := r.Cookie(s.cookieName())
-		if err != nil || subtle.ConstantTimeCompare([]byte(c.Value), []byte(s.token)) != 1 {
+		if !s.authenticated(r) {
 			if strings.HasPrefix(r.URL.Path, "/api/") {
-				writeError(w, http.StatusUnauthorized, "not authenticated: open the URL printed by terraform-recovery")
+				writeError(w, http.StatusUnauthorized, "not logged in. "+loginHint)
 				return
 			}
 			w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 			w.WriteHeader(http.StatusUnauthorized)
-			fmt.Fprintln(w, "Open the URL printed in the terminal by terraform-recovery (it contains a one-time access token).")
+			fmt.Fprintln(w, "Not logged in. "+loginHint)
 			return
 		}
 		if r.Method != http.MethodGet && r.Method != http.MethodHead {
@@ -184,26 +212,59 @@ func (s *Server) allowedHost(host string) bool {
 	return false
 }
 
+// sameOrigin requires positive evidence that a state-changing request comes
+// from our own page: Fetch Metadata (Sec-Fetch-Site) and/or an Origin header
+// that matches this server. Requests with neither are refused.
 func (s *Server) sameOrigin(r *http.Request) bool {
-	origin := r.Header.Get("Origin")
-	if origin == "" {
-		// Browsers always send Origin on cross-origin POSTs; without it the
-		// request comes from a non-browser client that has the cookie.
-		return true
+	site := r.Header.Get("Sec-Fetch-Site")
+	if site != "" && site != "same-origin" {
+		return false
 	}
-	return origin == "http://"+r.Host
+	if origin := r.Header.Get("Origin"); origin != "" {
+		return origin == "http://"+r.Host
+	}
+	return site == "same-origin"
+}
+
+// authenticated reports whether the request carries a valid session cookie.
+func (s *Server) authenticated(r *http.Request) bool {
+	c, err := r.Cookie(s.cookieName())
+	if err != nil || c.Value == "" {
+		return false
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.sessions[c.Value]
 }
 
 func (s *Server) login(w http.ResponseWriter, r *http.Request) {
-	if subtle.ConstantTimeCompare([]byte(r.URL.Query().Get("token")), []byte(s.token)) != 1 {
-		http.Error(w, "invalid token", http.StatusUnauthorized)
+	if s.authenticated(r) {
+		// Already logged in (for example an old link opened from the
+		// history): just drop the token from the address bar.
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
+	token := r.URL.Query().Get("token")
+	s.mu.Lock()
+	valid := s.loginToken != "" && subtle.ConstantTimeCompare([]byte(token), []byte(s.loginToken)) == 1
+	session := ""
+	if valid {
+		s.loginToken = "" // the link works once
+		session = randomToken()
+		s.sessions[session] = true
+	}
+	s.mu.Unlock()
+	if !valid {
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		w.WriteHeader(http.StatusUnauthorized)
+		fmt.Fprintln(w, "This login link is invalid or has already been used. "+loginHint)
 		return
 	}
 	http.SetCookie(w, &http.Cookie{
-		Name: s.cookieName(), Value: s.token, Path: "/",
+		Name: s.cookieName(), Value: session, Path: "/",
 		HttpOnly: true, SameSite: http.SameSiteStrictMode,
 	})
-	// Redirect so the token does not stay in the address bar or history.
+	// Redirect so the token does not stay in the address bar.
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 

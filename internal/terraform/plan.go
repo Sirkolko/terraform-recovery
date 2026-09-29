@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"regexp"
 	"sort"
+	"strings"
 )
 
 // Plan actions as classified by this tool.
@@ -53,7 +54,22 @@ type PlanAnalysis struct {
 	// Accounts lists the AWS accounts the imported resources belong to,
 	// as far as their ARNs reveal it.
 	Accounts []string `json:"accounts,omitempty"`
+	// FormatVersion is the version of Terraform's JSON plan format.
+	FormatVersion string `json:"format_version,omitempty"`
+	// Blockers are reasons, other than resource changes, why the plan must
+	// not be applied: a plan Terraform cannot apply, deferred changes, action
+	// invocations. Anything the tool does not understand blocks the apply.
+	Blockers []string `json:"blockers,omitempty"`
+	// Incomplete is set when Terraform reports that the plan does not cover
+	// the whole configuration. That is expected for plans limited with
+	// -target; the caller decides whether it is acceptable.
+	Incomplete bool `json:"incomplete,omitempty"`
 }
+
+// supportedPlanFormat is the major version of Terraform's JSON plan format
+// this tool understands. A new major version may change the meaning of
+// fields, so it is refused instead of being misread.
+const supportedPlanFormat = "1"
 
 var arnAccount = regexp.MustCompile(`^arn:[a-z0-9-]+:[a-z0-9-]+:[a-z0-9-]*:([0-9]{12}):`)
 
@@ -77,9 +93,15 @@ func (p *PlanAnalysis) HasChanges() bool {
 }
 
 type planJSON struct {
-	TerraformVersion string `json:"terraform_version"`
-	Errored          bool   `json:"errored"`
-	ResourceChanges  []struct {
+	FormatVersion             string            `json:"format_version"`
+	TerraformVersion          string            `json:"terraform_version"`
+	Errored                   bool              `json:"errored"`
+	Applyable                 *bool             `json:"applyable"`
+	Complete                  *bool             `json:"complete"`
+	ActionInvocations         []json.RawMessage `json:"action_invocations"`
+	DeferredChanges           []json.RawMessage `json:"deferred_changes"`
+	DeferredActionInvocations []json.RawMessage `json:"deferred_action_invocations"`
+	ResourceChanges           []struct {
 		Address      string `json:"address"`
 		Mode         string `json:"mode"`
 		ActionReason string `json:"action_reason"`
@@ -104,7 +126,23 @@ func AnalyzePlan(data []byte, expected map[string]string) (*PlanAnalysis, error)
 	if err := json.Unmarshal(data, &p); err != nil {
 		return nil, fmt.Errorf("cannot parse plan JSON: %w", err)
 	}
-	a := &PlanAnalysis{TerraformVersion: p.TerraformVersion, Errored: p.Errored}
+	if major, _, _ := strings.Cut(p.FormatVersion, "."); major != supportedPlanFormat {
+		return nil, fmt.Errorf("unsupported Terraform plan format version %q (expected %s.x); update terraform-recovery", p.FormatVersion, supportedPlanFormat)
+	}
+	a := &PlanAnalysis{TerraformVersion: p.TerraformVersion, Errored: p.Errored, FormatVersion: p.FormatVersion}
+	// Fields added in newer Terraform versions are checked when present.
+	if p.Applyable != nil && !*p.Applyable {
+		a.Blockers = append(a.Blockers, "Terraform reports that the plan cannot be applied.")
+	}
+	if p.Complete != nil && !*p.Complete {
+		a.Incomplete = true
+	}
+	if n := len(p.DeferredChanges); n > 0 {
+		a.Blockers = append(a.Blockers, fmt.Sprintf("The plan defers %d resource change(s).", n))
+	}
+	if n := len(p.ActionInvocations) + len(p.DeferredActionInvocations); n > 0 {
+		a.Blockers = append(a.Blockers, fmt.Sprintf("The plan invokes %d Terraform action(s).", n))
+	}
 	imported := map[string]string{}
 	for _, rc := range p.ResourceChanges {
 		if rc.Mode == "data" {
@@ -185,7 +223,7 @@ func AnalyzePlan(data []byte, expected map[string]string) (*PlanAnalysis, error)
 	sort.Strings(a.MismatchedImports)
 	sort.Strings(a.UnexpectedImports)
 	sort.Strings(a.Accounts)
-	a.ImportOnly = !a.Errored && !a.HasChanges() && a.Import > 0 && len(a.MismatchedImports) == 0
+	a.ImportOnly = !a.Errored && !a.HasChanges() && a.Import > 0 && len(a.MismatchedImports) == 0 && len(a.Blockers) == 0
 	return a, nil
 }
 

@@ -80,6 +80,9 @@ type Service struct {
 	tfErr     error
 	tfVersion *terraform.Version
 
+	unlock    func()
+	closeOnce sync.Once
+
 	mu        sync.Mutex
 	cfg       *terraform.Config
 	cfgErr    error
@@ -134,6 +137,20 @@ func New(ctx context.Context, opts Options) (*Service, error) {
 		now:        opts.Now,
 		profile:    opts.Profile,
 	}
+	if !opts.DryRun {
+		if err := s.store.ensureDir(); err != nil {
+			return nil, err
+		}
+		if s.unlock, err = lockDir(s.store.dir); err != nil {
+			return nil, err
+		}
+	}
+	started := false
+	defer func() {
+		if !started && s.unlock != nil {
+			s.unlock()
+		}
+	}()
 	if s.mapping, err = s.store.loadMapping(); err != nil {
 		return nil, err
 	}
@@ -160,6 +177,7 @@ func New(ctx context.Context, opts Options) (*Service, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.reloadLocked()
+	started = true
 	return s, nil
 }
 
@@ -197,7 +215,17 @@ func (s *Service) initTerraform(ctx context.Context) {
 }
 
 // Close waits for running jobs to finish.
-func (s *Service) Close() { s.jobs.Wait() }
+// Close cancels running scans and plans, waits for running operations (an
+// import apply is always allowed to finish) and releases the project lock.
+func (s *Service) Close() {
+	s.closeOnce.Do(func() {
+		s.jobs.Shutdown()
+		s.jobs.Wait()
+		if s.unlock != nil {
+			s.unlock()
+		}
+	})
+}
 
 // ProjectDir returns the absolute project path.
 func (s *Service) ProjectDir() string { return s.projectDir }
@@ -213,6 +241,7 @@ func (s *Service) reloadLocked() {
 		Vars:          s.opts.Vars,
 		Workspace:     s.opts.Workspace,
 		WantAttribute: matching.WantAttribute,
+		WantUnder:     matching.WantUnder,
 		InstanceKeys:  s.mapping.InstanceKeys,
 	})
 	s.rematchLocked()

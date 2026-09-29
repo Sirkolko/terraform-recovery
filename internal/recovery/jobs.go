@@ -193,6 +193,18 @@ func (js *Jobs) Cancel(id string) error {
 	return nil
 }
 
+// Shutdown cancels the running jobs that can be cancelled safely (scans and
+// plans). An import apply is never interrupted.
+func (js *Jobs) Shutdown() {
+	js.mu.Lock()
+	defer js.mu.Unlock()
+	for _, j := range js.jobs {
+		if j.Cancelable && j.State() == JobRunning {
+			j.cancel()
+		}
+	}
+}
+
 // Wait blocks until all jobs have finished.
 func (js *Jobs) Wait() { js.wg.Wait() }
 

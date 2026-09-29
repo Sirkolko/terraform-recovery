@@ -12,7 +12,9 @@ signals that produced it.
 - the address (`module.network.aws_subnet.private[1]`), type, provider configuration and
   region;
 - statically evaluated attribute values that matter for matching (CIDR blocks, names,
-  instance types, ports, …) — nothing else is evaluated, so secrets are never read;
+  instance types, ports, …). Other attributes are not evaluated at all unless they refer to
+  another resource, so a literal password never becomes a value in the model; sensitive
+  and ephemeral variables and outputs are treated as unknown;
 - tags, including the provider's `default_tags`;
 - references to other resources, resolved to exact instance addresses. During evaluation
   every resource instance is represented by a placeholder whose `id`, `arn`, `name`, …

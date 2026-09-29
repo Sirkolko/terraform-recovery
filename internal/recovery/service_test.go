@@ -3,6 +3,7 @@ package recovery
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -151,7 +152,8 @@ func (f *fakeTF) Plan(_ context.Context, out io.Writer, planFile string, targets
 			"change": map[string]any{"actions": actions, "importing": map[string]any{"id": ids[i][1]},
 				"after": map[string]any{"arn": "arn:aws:ec2:eu-west-1:" + account + ":resource/" + ids[i][1]}}})
 	}
-	data, _ := json.Marshal(map[string]any{"resource_changes": changes})
+	// Like real Terraform, a plan limited with -target is marked incomplete.
+	data, _ := json.Marshal(map[string]any{"format_version": "1.2", "applyable": true, "complete": len(targets) == 0, "resource_changes": changes})
 	fmt.Fprintf(out, "Plan: %d to import\n", len(tos))
 	return 2, os.WriteFile(planFile, data, 0o600)
 }
@@ -283,10 +285,13 @@ func TestRecoveryWorkflow(t *testing.T) {
 	if len(tf.targets) != 5 {
 		t.Errorf("plan must be targeted when resources are excluded: %v", tf.targets)
 	}
-	for _, f := range []string{"generated-imports.tf", "mapping.json", "plan.json", "recovery.tfplan", "plan-record.json"} {
+	for _, f := range []string{"generated-imports.tf", "mapping.json", "recovery.tfplan", "plan-record.json"} {
 		if _, err := os.Stat(filepath.Join(rec.Dir, f)); err != nil {
 			t.Errorf("snapshot missing %s", f)
 		}
+	}
+	if _, err := os.Stat(filepath.Join(rec.Dir, "plan.json")); err == nil {
+		t.Error("the raw JSON plan (with clear-text values) must not be stored")
 	}
 	if st := s.View().Project.RecoveryFileState; st != "generated" {
 		t.Errorf("recovery file state = %s", st)
@@ -322,6 +327,9 @@ func TestRecoveryWorkflow(t *testing.T) {
 	if _, err := os.Stat(filepath.Join(rec.Dir, "state-before-apply.json")); err != nil {
 		t.Error("state was not backed up before apply")
 	}
+	if _, err := os.Stat(rec.PlanFile); err == nil {
+		t.Error("the applied plan file must be removed")
+	}
 	v = s.View()
 	if st, m := status(v, "aws_vpc.main"); st != models.StatusMatched || m.Source != models.SourceState {
 		t.Errorf("after apply vpc = %s %+v", st, m)
@@ -339,7 +347,14 @@ func TestRecoveryWorkflow(t *testing.T) {
 		t.Errorf("remove recovery file: %v %v", removed, err)
 	}
 
+	// Only one session may use a project at a time.
+	if _, err := New(ctx, Options{ProjectDir: s.projectDir, Terraform: tf,
+		NewDiscoverer: func(context.Context, string) (Discoverer, error) { return fakeDiscoverer{}, nil }}); !errors.Is(err, ErrLocked) {
+		t.Fatalf("second session on the same project: %v", err)
+	}
+
 	// Progress survives a restart.
+	s.Close()
 	s2, err := New(ctx, Options{ProjectDir: s.projectDir, Terraform: tf,
 		NewDiscoverer: func(context.Context, string) (Discoverer, error) { return fakeDiscoverer{}, nil }})
 	if err != nil {
@@ -354,6 +369,17 @@ func TestRecoveryWorkflow(t *testing.T) {
 
 func reflect(list []string, want ...string) bool {
 	return strings.Join(list, ",") == strings.Join(want, ",")
+}
+
+func TestIncompletePlanNeedsTargets(t *testing.T) {
+	rec := &PlanRecord{Analysis: &terraform.PlanAnalysis{Import: 1, ImportOnly: true, Incomplete: true}}
+	if ok, why := rec.CanApply(); ok || !strings.Contains(why, "incomplete") {
+		t.Errorf("an incomplete plan that was not targeted must be blocked: %v %s", ok, why)
+	}
+	rec.Targeted = true
+	if ok, why := rec.CanApply(); !ok {
+		t.Errorf("a targeted plan is incomplete by design: %s", why)
+	}
 }
 
 func TestUnexpectedChangesBlockApply(t *testing.T) {
@@ -459,4 +485,56 @@ func TestLinkValidation(t *testing.T) {
 	if err != nil || !strings.Contains(string(data), `"resource_id": "vpc-default"`) {
 		t.Errorf("mapping json = %s", data)
 	}
+}
+
+// blockingDiscoverer hangs in Scan until its context is cancelled.
+type blockingDiscoverer struct {
+	fakeDiscoverer
+	started chan struct{}
+}
+
+func (b blockingDiscoverer) Scan(ctx context.Context, _ []string, _ func(string)) (*models.Inventory, error) {
+	close(b.started)
+	<-ctx.Done()
+	return nil, ctx.Err()
+}
+
+func TestCloseCancelsScanAndReleasesLock(t *testing.T) {
+	dir := t.TempDir()
+	os.WriteFile(filepath.Join(dir, "main.tf"), []byte(projectTF), 0o644)
+	os.Mkdir(filepath.Join(dir, ".recovery"), 0o755)
+	started := make(chan struct{})
+	opts := Options{ProjectDir: dir, Terraform: &fakeTF{dir: dir},
+		NewDiscoverer: func(context.Context, string) (Discoverer, error) {
+			return blockingDiscoverer{started: started}, nil
+		}}
+	s, err := New(context.Background(), opts)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if info, _ := os.Stat(filepath.Join(dir, ".recovery")); info.Mode().Perm() != 0o700 {
+		t.Errorf(".recovery permissions = %v, want 0700", info.Mode().Perm())
+	}
+	job, err := s.StartScan("", []string{"eu-west-1"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	<-started
+	done := make(chan struct{})
+	go func() { s.Close(); close(done) }()
+	select {
+	case <-done:
+	case <-time.After(5 * time.Second):
+		t.Fatal("Close did not cancel the running scan")
+	}
+	if st := job.State(); st != JobCancelled {
+		t.Errorf("scan state = %s", st)
+	}
+	// The lock is released: a new session can start.
+	opts.NewDiscoverer = func(context.Context, string) (Discoverer, error) { return fakeDiscoverer{}, nil }
+	s2, err := New(context.Background(), opts)
+	if err != nil {
+		t.Fatalf("lock not released: %v", err)
+	}
+	s2.Close()
 }

@@ -20,10 +20,15 @@ tool makes:
 | RDS | `DescribeDBInstances`, `DescribeDBSubnetGroups` | databases |
 | S3 | `ListAllMyBuckets`, `GetBucketLocation`, `GetBucketTagging` | buckets and their region and tags |
 | IAM | `ListRoles`, `ListPolicies`, `ListUsers`, `ListInstanceProfiles` | identities |
-| STS | `GetCallerIdentity` | showing which account is scanned (needs no permission) |
+| STS | `GetCallerIdentity` | showing which account is scanned (needs no permission, but an explicit `Deny`, for example in a service control policy, makes discovery fail) |
 
 The AWS managed policy `ReadOnlyAccess` also works. If a call is denied, the scan
 continues and the coverage report shows which resource types may be missing.
+
+Every call carries `app/terraform-recovery` in its User-Agent, so discovery is easy to
+recognise in CloudTrail (filter on `userAgent` containing `app/terraform-recovery`) and to
+tell apart from real activity in GuardDuty or other monitoring. In large accounts the IAM
+list calls are paginated and can produce a burst of read events; that is expected.
 
 Create the policy, for example:
 

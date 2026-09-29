@@ -89,6 +89,7 @@ func (r *Runner) command(ctx context.Context, stdout, stderr io.Writer, args ...
 	cmd.Stdin = nil
 	cmd.Stdout = stdout
 	cmd.Stderr = stderr
+	detachFromTerminal(cmd)
 	// Interrupt instead of killing so Terraform can release locks and
 	// persist state cleanly; kill only if it does not exit in time.
 	cmd.Cancel = func() error { return cmd.Process.Signal(os.Interrupt) }

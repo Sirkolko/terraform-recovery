@@ -46,8 +46,20 @@
     } catch {
       data = null;
     }
+    if (res.status === 401) showLoggedOut();
     if (!res.ok) throw new Error((data && data.error) || `${res.status} ${res.statusText}`);
     return data;
+  }
+
+  // showLoggedOut replaces the page when the session is gone, for example
+  // after terraform-recovery was restarted.
+  function showLoggedOut() {
+    state.loggedOut = true;
+    clearTimeout(state.jobTimer);
+    $("main").replaceChildren(h("div", { class: "hint-box" },
+      h("h2", null, "Not logged in"),
+      h("p", null, "Your session is no longer valid (was terraform-recovery restarted?)."),
+      h("p", null, "Press Enter in the terminal where terraform-recovery runs and open the new one-time login link it prints.")));
   }
 
   let toastTimer;
@@ -164,6 +176,7 @@
   // --------------------------------------------------------------------- data
 
   async function refresh() {
+    if (state.loggedOut) return;
     let data;
     try {
       data = await api("GET", "/api/session");
@@ -269,7 +282,7 @@
   }
 
   async function pollJob() {
-    if (!state.job) return;
+    if (!state.job || state.loggedOut) return;
     try {
       const v = await api("GET", `/api/jobs/${q(state.job.id)}?offset=${state.jobOffset}`);
       state.job = v;
@@ -338,7 +351,7 @@
   }
 
   function renderAll() {
-    if (!state.session) return;
+    if (!state.session || state.loggedOut) return;
     renderSteps();
     renderSummary();
     renderDiagnostics();
@@ -423,6 +436,7 @@
   // -------------------------------------------------------------- review view
 
   function renderReview() {
+    if (state.loggedOut) return;
     renderTFPanel();
     renderAWSPanel();
     renderDetail();
@@ -948,7 +962,9 @@
         h("div", { class: "ready-item c-ignored" }, h("strong", null, String(sum.ignored)), h("span", null, "ignored"))),
       sum.review + sum.unmatched > 0
         ? h("p", { class: "alert alert-warn" }, `${plural(sum.review + sum.unmatched, "resource")} are not resolved yet. You can import the confirmed ones now and continue later; unresolved resources are excluded from the plan.`)
-        : h("p", { class: "alert alert-ok" }, "Every Terraform resource is mapped or deliberately ignored.")));
+        : sum.ignored > 0
+          ? h("p", { class: "alert alert-warn" }, `Every Terraform resource is resolved, but ${plural(sum.ignored, "resource")} ${sum.ignored === 1 ? "is" : "are"} deliberately ignored and will not be imported.`)
+          : h("p", { class: "alert alert-ok" }, "Every Terraform resource is mapped.")));
 
     if (!pv) {
       parts.push(card("Generated imports", h("p", { class: "muted" }, "Loading…")));
@@ -1040,7 +1056,10 @@
       out.push(card("State recovered",
         h("p", { class: "alert alert-ok big" }, `✓ ${plural(p.apply.imported.length, "resource")} imported into the Terraform state.`),
         (p.apply.missing || []).length ? h("p", { class: "alert alert-error" }, `Not found in the state after apply: ${p.apply.missing.join(", ")}`) : null,
-        h("p", null, "Next: run ", h("code", null, "terraform plan"), " in the project to confirm there are no remaining changes. Resources that were excluded still need attention."),
+        p.excluded > 0 ? h("div", { class: "alert alert-error big" },
+          h("strong", null, "Recovery is NOT complete"),
+          h("p", null, `${plural(p.excluded, "Terraform resource")} ${p.excluded === 1 ? "was" : "were"} left out of this import (the plan was limited with -target). A normal terraform plan will propose to create ${p.excluded === 1 ? "it" : "them"}. Map or resolve ${p.excluded === 1 ? "it" : "them"} before you use this configuration normally.`)) : null,
+        h("p", null, "Next: run a full ", h("code", null, "terraform plan"), " (without -target) in the project to confirm there are no remaining changes."),
         fileState === "generated" ? h("div", { class: "actions" },
           h("button", { type: "button", class: "btn", onclick: () => act(() => api("POST", "/api/remove-recovery-file"), "recovery.import.tf removed") }, "Remove recovery.import.tf"),
           h("span", { class: "muted" }, "The import blocks are no longer needed. A copy stays in the recovery snapshot.")) : null));
@@ -1049,6 +1068,7 @@
       out.push(card("Apply the import",
         h("label", { class: "check big-check", for: "apply-ack" }, ack,
           ` I reviewed this plan. Terraform will record ${plural(a.import, "existing resource")} in the state of the ${state.session.project.backend || "local"} backend. No infrastructure will be created, changed or destroyed.`),
+        p.excluded > 0 ? h("p", { class: "alert alert-warn" }, `This is a partial import: ${plural(p.excluded, "Terraform resource")} ${p.excluded === 1 ? "stays" : "stay"} excluded and will still need to be mapped afterwards.`) : null,
         h("div", { class: "actions" },
           h("button", {
             type: "button", class: "btn btn-danger", disabled: !p.can_apply || !state.applyAck || jobRunning(),

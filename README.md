@@ -99,8 +99,10 @@ cd terraform-recovery && make build   # binary in ./bin (needs Go 1.26+)
 terraform-recovery --project ./terraform
 ```
 
-The command prints a URL such as `http://127.0.0.1:43127/?token=…`. Open it in your
-browser; the token logs you in and is removed from the address bar.
+The command prints a one-time login link such as `http://127.0.0.1:43127/?token=…`. Open
+it in your browser (or add `--open`); it logs you in once and then stops working. Press
+Enter in the terminal to print a new link, for example for another browser. Ctrl+C stops
+the tool.
 
 Try it without AWS access using the bundled demo (a VPC module, ALB, EC2, RDS, S3 and IAM
 setup plus a synthetic inventory with a few traps — a legacy VPC with the same CIDR, a
@@ -163,9 +165,20 @@ The tool is built to make large recoveries **difficult to get wrong**:
   if the mappings changed after planning (hash of the import set) or the plan file was
   modified (SHA-256), and Terraform refuses stale plans itself.
 - **Snapshots before anything runs.** Each plan creates `.recovery/<timestamp>/` with the
-  generated imports, the mapping, the plan (binary, JSON and text) and backups of local
-  `terraform.tfstate`, `.terraform.lock.hcl` and any previous `recovery.import.tf`. The
-  current state is pulled into the snapshot right before apply.
+  generated imports, the mapping, the saved plan with its text rendering, and backups of
+  local `terraform.tfstate`, `.terraform.lock.hcl` and any previous `recovery.import.tf`.
+  The current state is pulled into the snapshot right before apply.
+- **Unknown means no.** The plan analysis refuses JSON plan formats it does not know and
+  blocks the apply on anything it does not fully understand: unknown actions, incomplete or
+  non-applyable plans, deferred changes, Terraform actions.
+- **A partial import is called partial.** When resources are excluded, the plan is limited
+  with `-target`, and after the apply the tool states clearly that the recovery is not
+  complete until a full `terraform plan` shows no changes.
+- **Stopping is safe.** Terraform runs in its own process group. Ctrl+C cancels scans and
+  plans, but a running import apply always finishes; a second Ctrl+C exits the tool while
+  Terraform still completes the apply.
+- **One session per project.** A lock in `.recovery/` prevents two sessions (for example
+  the UI and a CLI command) from overwriting each other's work.
 - **Your files are never overwritten.** The only file written into the project is
   `recovery.import.tf`, marked as generated. An existing file without the marker (or a
   symlink) is never replaced or deleted.
@@ -182,17 +195,26 @@ The tool is built to make large recoveries **difficult to get wrong**:
   roles, container and instance metadata). The tool never asks for, reads, stores or
   logs access keys. The profile list is built from section names only.
 - **Hardened local server.** It binds to loopback only (non-loopback addresses are
-  refused), checks the `Host` header against DNS rebinding, requires a one-time random
-  token exchanged for an `HttpOnly`, `SameSite=Strict` cookie, requires a CSRF token,
-  same-origin `Origin` and a JSON content type for every state-changing request, limits
-  request bodies, and sends a strict Content-Security-Policy (no inline scripts).
-  The UI inserts all data as text, never as HTML.
-- **Secrets stay out of the model.** Only attributes relevant for matching are evaluated
-  from the configuration; values such as passwords are never read. Sensitive variables
-  are treated as unknown. `-var` values are redacted from logs.
-- **Recovery data is private.** `.recovery/` is created with `0700` permissions, files
-  with `0600`, and it contains a `.gitignore` so it is not committed by accident. Plan
-  files and state backups can contain secrets — delete `.recovery/` when you are done.
+  refused and `localhost` is bound as `127.0.0.1`) and checks the `Host` header against DNS
+  rebinding. Logging in needs the one-time link from the terminal: its token works once
+  and is exchanged for a separate random session in an `HttpOnly`, `SameSite=Strict`
+  cookie, so a link that leaks later (terminal scrollback, browser history, process list)
+  is useless. Every state-changing request must come from the tool's own page
+  (`Sec-Fetch-Site`/`Origin`), carry a CSRF token and be JSON; bodies are size-limited, and
+  a strict Content-Security-Policy forbids inline scripts. The UI inserts all data as text,
+  never as HTML.
+- **Secrets stay out of the model.** Only attributes that matter for matching are
+  extracted. Other attributes, for example a `password`, are not evaluated at all unless
+  they refer to another resource, and their values are never stored, shown or logged.
+  Sensitive and ephemeral variables and outputs are treated as unknown. `-var` values are
+  redacted from logs.
+- **Recovery data is private.** `.recovery/` is kept at `0700` permissions (tightened if it
+  already existed), files are `0600`, and it contains a `.gitignore` so it is not committed
+  by accident. Terraform's JSON plan, which shows every value in clear text, is analysed in
+  memory and never written. The saved plan file needed for the apply is deleted after a
+  successful apply or when a newer plan replaces it. The state backup taken right before
+  the apply is kept as a safety net and can contain secrets, and `inventory.json` contains
+  resource tags; delete `.recovery/` when the recovery is finished.
 
 ## Permissions
 
@@ -301,7 +323,8 @@ terraform-recovery apply --project ./terraform
 | `<project>/recovery.import.tf` | generated import blocks; safe to delete after the import |
 | `<project>/.recovery/mapping.json` | your decisions: confirmed mappings, ignores, manual IDs |
 | `<project>/.recovery/inventory.json` | the last AWS inventory |
-| `<project>/.recovery/<timestamp>/` | one snapshot per plan: `generated-imports.tf`, `mapping.json`, `recovery.tfplan`, `plan.json`, `terraform-plan.txt`, logs, backups, `state-before-apply.json` |
+| `<project>/.recovery/<timestamp>/` | one snapshot per plan: `generated-imports.tf`, `mapping.json`, `terraform-plan.txt`, the plan analysis, logs, backups, `state-before-apply.json`, and `recovery.tfplan` until it is applied or replaced |
+| `<project>/.recovery/lock` | held while a session runs, so only one session uses the project |
 
 Terraform itself may create `.terraform/` and update `.terraform.lock.hcl` during
 `terraform init`, as it does in any normal run (the lock file is backed up first). With
@@ -313,7 +336,9 @@ Terraform itself may create `.terraform/` and update `.terraform.lock.hcl` durin
 - Resources whose `count`/`for_each` depends on values known only during apply (data
   sources, other resources) need their instance keys entered in the UI.
 - Remote modules are read from `.terraform/modules` — run `terraform init` (or use
-  *Install modules*) first. Override files (`*_override.tf`) are not merged.
+  *Install modules*) first. Override files (`*_override.tf`) are not merged into the
+  matching; Terraform's plan does use them, so any difference shows up as a change and
+  blocks the import.
 - HCP Terraform (`cloud` block) remote runs are not supported: plans must be saved locally.
 - Discovery reads tags where the list APIs return them; IAM tags are not fetched.
 - The AWS API calls are covered by tests with fake clients; the plan/apply workflow is

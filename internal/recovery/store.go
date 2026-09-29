@@ -40,6 +40,13 @@ func (s *store) ensureDir() error {
 	if err := os.MkdirAll(s.dir, 0o700); err != nil {
 		return err
 	}
+	// The directory may already exist with broader permissions (created by
+	// hand or by an older version); recovery data must stay private.
+	if info, err := os.Stat(s.dir); err == nil && info.Mode().Perm()&0o077 != 0 {
+		if err := os.Chmod(s.dir, 0o700); err != nil {
+			return fmt.Errorf("making %s private: %w", s.dir, err)
+		}
+	}
 	gi := filepath.Join(s.dir, ".gitignore")
 	if _, err := os.Stat(gi); errors.Is(err, fs.ErrNotExist) {
 		if err := os.WriteFile(gi, []byte("# Created by terraform-recovery: keep recovery data out of version control.\n*\n"), 0o600); err != nil {

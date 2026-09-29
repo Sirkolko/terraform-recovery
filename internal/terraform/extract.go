@@ -136,7 +136,29 @@ func (ex *extractor) dynamic(blk *hclsyntax.Block, prefix string, ctx *hcl.EvalC
 	}
 }
 
+// needsEval reports whether an attribute has to be evaluated: its value, or
+// a value nested below it, is wanted, or it may refer to another resource or
+// module output, which is how relationships are found. Anything else, such as
+// a password given literally or through a variable, is never evaluated.
+func needsEval(want, wantUnder bool, expr hcl.Expression) bool {
+	if want || wantUnder {
+		return true
+	}
+	for _, trav := range expr.Variables() {
+		switch trav.RootName() {
+		case "var", "local", "count", "each", "path", "terraform", "self", "data", "ephemeral":
+			continue
+		}
+		return true // a resource, a module or a dynamic block iterator
+	}
+	return false
+}
+
 func (ex *extractor) attr(path string, expr hcl.Expression, ctx *hcl.EvalContext) {
+	typ := ex.res.Type
+	if !needsEval(ex.m.l.want(typ, path), ex.m.l.wantUnder(typ, path), expr) {
+		return
+	}
 	v := ex.m.eval(expr, ctx)
 	ex.references(path, v, expr)
 	ex.value(path, v)
