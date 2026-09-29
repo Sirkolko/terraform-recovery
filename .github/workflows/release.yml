@@ -1,0 +1,43 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write     # create the GitHub release
+      id-token: write     # sign the build provenance (Sigstore)
+      attestations: write # store the build provenance
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          # Always the latest patch release, so fixes in the standard library ship.
+          go-version: stable
+      - name: Test
+        run: go test ./...
+      - name: Vulnerability check (blocks the release)
+        run: go run golang.org/x/vuln/cmd/govulncheck@v1.8.0 ./...
+      - name: Build and publish
+        uses: goreleaser/goreleaser-action@f06c13b6b1a9625abc9e6e439d9c05a8f2190e94 # v7.2.3
+        with:
+          distribution: goreleaser
+          version: v2.18.2
+          # Compiling the AWS SDK's EC2 package takes about 2.5 GB per build;
+          # limit parallel builds so the runner does not run out of memory.
+          args: release --clean --parallelism 2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-checksums: dist/checksums.txt

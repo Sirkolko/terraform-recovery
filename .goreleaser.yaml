@@ -1,0 +1,68 @@
+# GoReleaser configuration. Releases are built by .github/workflows/release.yml
+# when a tag such as v0.1.0 is pushed. Test locally with:
+#   goreleaser release --snapshot --clean
+version: 2
+
+project_name: terraform-recovery
+
+before:
+  hooks:
+    - go mod verify
+
+builds:
+  - id: terraform-recovery
+    main: ./cmd/terraform-recovery
+    binary: terraform-recovery
+    env:
+      - CGO_ENABLED=0
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w -X main.version={{ .Version }}
+    mod_timestamp: "{{ .CommitTimestamp }}"
+    goos: [linux, darwin, windows]
+    goarch: [amd64, arm64]
+
+archives:
+  - id: default
+    formats: [tar.gz]
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    files:
+      - LICENSE
+      - README.md
+      - THIRD_PARTY_NOTICES.md
+
+checksum:
+  name_template: checksums.txt
+  algorithm: sha256
+
+snapshot:
+  version_template: "{{ incpatch .Version }}-snapshot"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^ci:"
+      - "^chore\\(deps\\)"
+
+release:
+  github:
+    owner: Sirkolko
+    name: terraform-recovery
+  prerelease: auto
+  footer: |
+    ## Verify the download
+
+    ```bash
+    sha256sum --ignore-missing -c checksums.txt
+    gh attestation verify terraform-recovery_{{ .Version }}_linux_amd64.tar.gz --repo Sirkolko/terraform-recovery
+    ```
+
+    The attestation proves that the archive was built from this repository by GitHub Actions.
+    Every binary also lists the exact versions of its dependencies: `go version -m terraform-recovery`.

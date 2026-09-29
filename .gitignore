@@ -1,0 +1,12 @@
+/bin/
+/dist/
+
+# Terraform working files of the demo project
+.terraform/
+*.tfstate
+*.tfstate.*
+.terraform.lock.hcl
+
+# Recovery data (also protected by its own .gitignore)
+.recovery/
+recovery.import.tf

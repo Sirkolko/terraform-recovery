@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="csrf-token" content="{{.CSRF}}">
+<title>{{.Project}} · Terraform State Recovery</title>
+<link rel="icon" href="/static/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/static/styles.css">
+<script src="/static/app.js" defer></script>
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <img src="/static/icon.svg" alt="" width="26" height="26">
+    <div>
+      <strong>Terraform State Recovery</strong>
+      <span class="project" id="project">{{.Project}}</span>
+    </div>
+  </div>
+  <div class="badges">
+    {{if .DryRun}}<span class="badge badge-dry" title="Nothing is written to the project and Terraform is never run.">Dry run · read-only</span>{{end}}
+    <span class="badge badge-local" title="Runs on this machine only. No telemetry, no external services, no infrastructure data leaves this computer.">Local only · no telemetry</span>
+  </div>
+</header>
+
+<nav class="steps" id="steps" aria-label="Recovery steps">
+  <button type="button" data-view="scan"><span class="num">1</span><span>Scan AWS</span><small id="step-scan"></small></button>
+  <button type="button" data-view="review"><span class="num">2</span><span>Review mappings</span><small id="step-review"></small></button>
+  <button type="button" data-view="plan"><span class="num">3</span><span>Plan &amp; apply import</span><small id="step-plan"></small></button>
+</nav>
+
+<section id="summary" class="summary" aria-label="Recovery status"></section>
+<section id="diagnostics" class="diagnostics" aria-label="Warnings"></section>
+
+<main>
+  <section id="view-scan" class="view" hidden></section>
+  <section id="view-review" class="view mapper" hidden>
+    <div class="panel list-panel" id="tf-panel" aria-label="Terraform configuration"></div>
+    <div class="panel detail-panel" id="detail" aria-live="polite"></div>
+    <div class="panel list-panel" id="aws-panel" aria-label="AWS infrastructure"></div>
+  </section>
+  <section id="view-plan" class="view" hidden></section>
+</main>
+
+<div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+<footer>
+  terraform-recovery {{.Version}} · runs locally · AWS access through the SDK default credential chain · read-only discovery · Terraform performs every state change
+</footer>
+</body>
+</html>

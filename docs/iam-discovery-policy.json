@@ -1,0 +1,65 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "TerraformRecoveryDiscoveryEC2",
+      "Effect": "Allow",
+      "Action": [
+        "ec2:DescribeRegions",
+        "ec2:DescribeVpcs",
+        "ec2:DescribeSubnets",
+        "ec2:DescribeRouteTables",
+        "ec2:DescribeInternetGateways",
+        "ec2:DescribeNatGateways",
+        "ec2:DescribeSecurityGroups",
+        "ec2:DescribeSecurityGroupRules",
+        "ec2:DescribeInstances",
+        "ec2:DescribeVolumes",
+        "ec2:DescribeAddresses",
+        "ec2:DescribeKeyPairs"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "TerraformRecoveryDiscoveryLoadBalancing",
+      "Effect": "Allow",
+      "Action": [
+        "elasticloadbalancing:DescribeLoadBalancers",
+        "elasticloadbalancing:DescribeTargetGroups",
+        "elasticloadbalancing:DescribeListeners",
+        "elasticloadbalancing:DescribeTags"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "TerraformRecoveryDiscoveryRDS",
+      "Effect": "Allow",
+      "Action": [
+        "rds:DescribeDBInstances",
+        "rds:DescribeDBSubnetGroups"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "TerraformRecoveryDiscoveryS3",
+      "Effect": "Allow",
+      "Action": [
+        "s3:ListAllMyBuckets",
+        "s3:GetBucketLocation",
+        "s3:GetBucketTagging"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "TerraformRecoveryDiscoveryIAM",
+      "Effect": "Allow",
+      "Action": [
+        "iam:ListRoles",
+        "iam:ListPolicies",
+        "iam:ListUsers",
+        "iam:ListInstanceProfiles"
+      ],
+      "Resource": "*"
+    }
+  ]
+}

@@ -1,0 +1,2001 @@
+{
+  "version": 1,
+  "scanned_at": "2026-09-28T09:30:00Z",
+  "account_id": "123456789012",
+  "caller_arn": "arn:aws:sts::123456789012:assumed-role/ReadOnlyDiscovery/demo",
+  "partition": "aws",
+  "profile": "demo",
+  "regions": [
+    "eu-west-1"
+  ],
+  "resources": [
+    {
+      "key": "aws_db_instance|eu-west-1|shop-prod-db",
+      "type": "aws_db_instance",
+      "id": "shop-prod-db",
+      "import_id": "shop-prod-db",
+      "name": "shop-prod-db",
+      "region": "eu-west-1",
+      "account_id": "123456789012",
+      "tags": {
+        "Project": "shop",
+        "ManagedBy": "terraform"
+      },
+      "attributes": {
+        "identifier": [
+          "shop-prod-db"
+        ],
+        "engine": [
+          "postgres"
+        ],
+        "engine_version": [
+          "16.3"
+        ],
+        "instance_class": [
+          "db.t4g.large"
+        ],
+        "allocated_storage": [
+          "50"
+        ],
+        "storage_type": [
+          "gp3"
+        ],
+        "multi_az": [
+          "true"
+        ],
+        "port": [
+          "5432"
+        ],
+        "username": [
+          "shop"
+        ]
+      },
+      "relations": {
+        "db_subnet_group_name": [
+          "shop-prod-db"
+        ],
+        "vpc_security_group_ids": [
+          "sg-0a1b2c3d4e5f60003"
+        ],
+        "vpc_id": [
+          "vpc-0a40d5e2c9b1f7301"
+        ]
+      },
+      "identifiers": {
+        "id": "db-7XKQ2M4ZQ5VJ3N6FYP2B3JH4LE",
+        "identifier": "shop-prod-db",
+        "resource_id": "db-7XKQ2M4ZQ5VJ3N6FYP2B3JH4LE",
+        "arn": "arn:aws:rds:eu-west-1:123456789012:db:shop-prod-db"
+      },
+      "arn": "arn:aws:rds:eu-west-1:123456789012:db:shop-prod-db"
+    },
+    {
+      "key": "aws_db_subnet_group|eu-west-1|default",
+      "type": "aws_db_subnet_group",
+      "id": "default",
+      "import_id": "default",
+      "name": "default",
+      "region": "eu-west-1",
+      "account_id": "123456789012",
+      "tags": {},
+      "attributes": {
+        "name": [
+          "default"
+        ],
+        "description": [
+          "default"
+        ]
+      },
+      "relations": {
+        "vpc_id": [
+          "vpc-0de1a2b3c4d5e6f70"
+        ]
+      },
+      "identifiers": {
+        "id": "default",
+        "name": "default",
+        "arn": "arn:aws:rds:eu-west-1:123456789012:subgrp:default"
+      },
+      "arn": "arn:aws:rds:eu-west-1:123456789012:subgrp:default",
+      "auto_ignore": "Default DB subnet group created by AWS"
+    },
+    {
+      "key": "aws_db_subnet_group|eu-west-1|shop-prod-db",
+      "type": "aws_db_subnet_group",
+      "id": "shop-prod-db",
+      "import_id": "shop-prod-db",
+      "name": "shop-prod-db",
+      "region": "eu-west-1",
+      "account_id": "123456789012",
+      "tags": {},
+      "attributes": {
+        "name": [
+          "shop-prod-db"
+        ],
+        "description": [
+          "Managed by Terraform"
+        ]
+      },
+      "relations": {
+        "subnet_ids": [
+          "subnet-0c8d2f1b0e3e45b20",
+          "subnet-0c8d2f1b0e3e45b21"
+        ],
+        "vpc_id": [
+          "vpc-0a40d5e2c9b1f7301"
+        ]
+      },
+      "identifiers": {
+        "id": "shop-prod-db",
+        "name": "shop-prod-db",
+        "arn": "arn:aws:rds:eu-west-1:123456789012:subgrp:shop-prod-db"
+      },
+      "arn": "arn:aws:rds:eu-west-1:123456789012:subgrp:shop-prod-db"
+    },
+    {
+      "key": "aws_ebs_volume|eu-west-1|vol-0d1a7a1a1a1a1a101",
+      "type": "aws_ebs_volume",
+      "id": "vol-0d1a7a1a1a1a1a101",
+      "import_id": "vol-0d1a7a1a1a1a1a101",
+      "name": "shop-prod-web-data",
+      "region": "eu-west-1",
+      "account_id": "123456789012",
+      "tags": {
+        "Project": "shop",
+        "ManagedBy": "terraform",
+        "Name": "shop-prod-web-data"
+      },
+      "attributes": {
+        "availability_zone": [
+          "eu-west-1a"
+        ],
+        "size": [
+          "100"
+        ],
+        "type": [
+          "gp3"
+        ],
+        "iops": [
+          "3000"
+        ],
+        "encrypted": [
+          "true"
+        ],
+        "attachment.device": [
+          "/dev/sdf"
+        ]
+      },
+      "relations": {
+        "attachment.instance_id": [
+          "i-0a1b2c3d4e5f60101"
+        ]
+      },
+      "identifiers": {
+        "id": "vol-0d1a7a1a1a1a1a101"
+      }
+    },
+    {
+      "key": "aws_ebs_volume|eu-west-1|vol-0d1a7a1a1a1a1a102",
+      "type": "aws_ebs_volume",
+      "id": "vol-0d1a7a1a1a1a1a102",
+      "import_id": "vol-0d1a7a1a1a1a1a102",
+      "name": "shop-prod-web-data",
+      "region": "eu-west-1",
+      "account_id": "123456789012",
+      "tags": {
+        "Project": "shop",
+        "ManagedBy": "terraform",
+        "Name": "shop-prod-web-data"
+      },
+      "attributes": {
+        "availability_zone": [
+          "eu-west-1a"
+        ],
+        "size": [
+          "100"
+        ],
+        "type": [
+          "gp3"
+        ],
+        "iops": [
+          "3000"
+        ],
+        "encrypted": [
+          "true"
+        ],
+        "snapshot_id": [
+          "snap-0fe98dc76ba54fe32"
+        ]
+      },
+      "relations": {},
+      "identifiers": {
+        "id": "vol-0d1a7a1a1a1a1a102"
+      }
+    },
+    {
+      "key": "aws_ebs_volume|eu-west-1|vol-0e2b8b2b2b2b2b201",
+      "type": "aws_ebs_volume",
+      "id": "vol-0e2b8b2b2b2b2b201",
+      "import_id": "vol-0e2b8b2b2b2b2b201",
+      "name": "",
+      "region": "eu-west-1",
+      "account_id": "123456789012",
+      "tags": {},
+      "attributes": {
+        "availability_zone": [
+          "eu-west-1a"
+        ],
+        "size": [
+          "8"
+        ],
+        "type": [
+          "gp3"
+        ],
+        "encrypted": [
+          "false"
+        ],
+        "snapshot_id": [
+          "snap-0ab12cd34ef56ab78"
+        ],
+        "attachment.device": [
+          "/dev/xvda"
+        ],
+        "root_device_of": [
+          "i-0a1b2c3d4e5f60101"
+        ]
+      },
+      "relations": {
+        "attachment.instance_id": [
+          "i-0a1b2c3d4e5f60101"
+        ]
+      },
+      "identifiers": {
+        "id": "vol-0e2b8b2b2b2b2b201"
+      },
+      "auto_ignore": "Root volume of i-0a1b2c3d4e5f60101 (managed through aws_instance)"
+    },
+    {
+      "key": "aws_ebs_volume|eu-west-1|vol-0e2b8b2b2b2b2b202",
+      "type": "aws_ebs_volume",
+      "id": "vol-0e2b8b2b2b2b2b202",
+      "import_id": "vol-0e2b8b2b2b2b2b202",
+      "name": "",
+      "region": "eu-west-1",
+      "account_id": "123456789012",
+      "tags": {},
+      "attributes": {
+        "availability_zone": [
+          "eu-west-1b"
+        ],
+        "size": [
+          "8"
+        ],
+        "type": [
+          "gp3"
+        ],
+        "encrypted": [
+          "false"
+        ],
+        "snapshot_id": [
+          "snap-0ab12cd34ef56ab78"
+        ],
+        "attachment.device": [
+          "/dev/xvda"
+        ],
+        "root_device_of": [
+          "i-0a1b2c3d4e5f60102"
+        ]
+      },
+      "relations": {
+        "attachment.instance_id": [
+          "i-0a1b2c3d4e5f60102"
+        ]
+      },
+      "identifiers": {
+        "id": "vol-0e2b8b2b2b2b2b202"
+      },
+      "auto_ignore": "Root volume of i-0a1b2c3d4e5f60102 (managed through aws_instance)"
+    },
+    {
+      "key": "aws_ebs_volume|eu-west-1|vol-0e2b8b2b2b2b2b203",
+      "type": "aws_ebs_volume",
+      "id": "vol-0e2b8b2b2b2b2b203",
+      "import_id": "vol-0e2b8b2b2b2b2b203",
+      "name": "",
+      "region": "eu-west-1",
+      "account_id": "123456789012",
+      "tags": {},
+      "attributes": {
+        "availability_zone": [
+          "eu-west-1a"
+        ],
+        "size": [
+          "8"
+        ],
+        "type": [
+          "gp3"
+        ],
+        "encrypted": [
+          "false"
+        ],
+        "snapshot_id": [
+          "snap-0ab12cd34ef56ab78"
+        ],
+        "attachment.device": [
+          "/dev/xvda"
+        ],
+        "root_device_of": [
+          "i-0a1b2c3d4e5f60103"
+        ]
+      },
+      "relations": {
+        "attachment.instance_id": [
+          "i-0a1b2c3d4e5f60103"
+        ]
+      },
+      "identifiers": {
+        "id": "vol-0e2b8b2b2b2b2b203"
+      },
+      "auto_ignore": "Root volume of i-0a1b2c3d4e5f60103 (managed through aws_instance)"
+    },
+    {
+      "key": "aws_ebs_volume|eu-west-1|vol-0e2b8b2b2b2b2b204",
+      "type": "aws_ebs_volume",
+      "id": "vol-0e2b8b2b2b2b2b204",
+      "import_id": "vol-0e2b8b2b2b2b2b204",
+      "name": "",
+      "region": "eu-west-1",
+      "account_id": "123456789012",
+      "tags": {},
+      "attributes": {
+        "availability_zone": [
+          "eu-west-1b"
+        ],
+        "size": [
+          "8"
+        ],
+        "type": [
+          "gp3"
+        ],
+        "encrypted": [
+          "false"
+        ],
+        "snapshot_id": [
+          "snap-0ab12cd34ef56ab78"
+        ],
+        "attachment.device": [
+          "/dev/xvda"
+        ],
+        "root_device_of": [
+          "i-0a1b2c3d4e5f60104"
+        ]
+      },
+      "relations": {
+        "attachment.instance_id": [
+          "i-0a1b2c3d4e5f60104"
+        ]
+      },
+      "identifiers": {
+        "id": "vol-0e2b8b2b2b2b2b204"
+      },
+      "auto_ignore": "Root volume of i-0a1b2c3d4e5f60104 (managed through aws_instance)"
+    },
+    {
+      "key": "aws_eip|eu-west-1|eipalloc-0a5b6c7d8e9f01234",
+      "type": "aws_eip",
+      "id": "eipalloc-0a5b6c7d8e9f01234",
+      "import_id": "eipalloc-0a5b6c7d8e9f01234",
+      "name": "52.18.44.10",
+      "region": "eu-west-1",
+      "account_id": "123456789012",
+      "tags": {
+        "Project": "shop",
+        "ManagedBy": "terraform"
+      },
+      "attributes": {
+        "public_ip": [
+          "52.18.44.10"
+        ],
+        "address": [
+          "52.18.44.10"
+        ],
+        "domain": [
+          "vpc"
+        ],
+        "association_id": [
+          "eipassoc-0a1b2c3d4e5f60789"
+        ]
+      },
+      "relations": {},
+      "identifiers": {
+        "id": "eipalloc-0a5b6c7d8e9f01234",
+        "allocation_id": "eipalloc-0a5b6c7d8e9f01234"
+      }
+    },
+    {
+      "key": "aws_eip|eu-west-1|eipalloc-0b11223344556677a",
+      "type": "aws_eip",
+      "id": "eipalloc-0b11223344556677a",
+      "import_id": "eipalloc-0b11223344556677a",
+      "name": "bastion-ip",
+      "region": "eu-west-1",
+      "account_id": "123456789012",
+      "tags": {
+        "Name": "bastion-ip"
+      },
+      "attributes": {
+        "public_ip": [
+          "34.240.1.20"
+        ],
+        "address": [
+          "34.240.1.20"
+        ],
+        "domain": [
+          "vpc"
+        ],
+        "association_id": [
+          "eipassoc-0c9d8e7f6a5b40123"
+        ]
+      },
+      "relations": {
+        "instance": [
+          "i-0a1b2c3d4e5f60103"
+        ]
+      },
+      "identifiers": {
+        "id": "eipalloc-0b11223344556677a",
+        "allocation_id": "eipalloc-0b11223344556677a"
+      }
+    },
+    {
+      "key": "aws_iam_instance_profile|global|shop-prod-web",
+      "type": "aws_iam_instance_profile",
+      "id": "shop-prod-web",
+      "import_id": "shop-prod-web",
+      "name": "shop-prod-web",
+      "region": "global",
+      "account_id": "123456789012",
+      "tags": {},
+      "attributes": {
+        "name": [
+          "shop-prod-web"
+        ],
+        "path": [
+          "/"
+        ]
+      },
+      "relations": {
+        "role": [
+          "shop-prod-web"
+        ]
+      },
+      "identifiers": {
+        "id": "shop-prod-web",
+        "name": "shop-prod-web",
+        "unique_id": "AIPA2EXAMPLEPROFILE01",
+        "arn": "arn:aws:iam::123456789012:instance-profile/shop-prod-web"
+      },
+      "arn": "arn:aws:iam::123456789012:instance-profile/shop-prod-web"
+    },
+    {
+      "key": "aws_iam_policy|global|arn:aws:iam::123456789012:policy/shop-prod-assets-read",
+      "type": "aws_iam_policy",
+      "id": "arn:aws:iam::123456789012:policy/shop-prod-assets-read",
+      "import_id": "arn:aws:iam::123456789012:policy/shop-prod-assets-read",
+      "name": "shop-prod-assets-read",
+      "region": "global",
+      "account_id": "123456789012",
+      "tags": {},
+      "attributes": {
+        "name": [
+          "shop-prod-assets-read"
+        ],
+        "path": [
+          "/"
+        ],
+        "description": [
+          "Read access to the assets bucket"
+        ]
+      },
+      "relations": {},
+      "identifiers": {
+        "id": "arn:aws:iam::123456789012:policy/shop-prod-assets-read",
+        "name": "shop-prod-assets-read",
+        "policy_id": "ANPA2EXAMPLE3POLICY4ID",
+        "arn": "arn:aws:iam::123456789012:policy/shop-prod-assets-read"
+      },
+      "arn": "arn:aws:iam::123456789012:policy/shop-prod-assets-read"
+    },
+    {
+      "key": "aws_iam_role|global|AWSReservedSSO_AdministratorAccess_4c2a6f7e1d9b3a05",
+      "type": "aws_iam_role",
+      "id": "AWSReservedSSO_AdministratorAccess_4c2a6f7e1d9b3a05",
+      "import_id": "AWSReservedSSO_AdministratorAccess_4c2a6f7e1d9b3a05",
+      "name": "AWSReservedSSO_AdministratorAccess_4c2a6f7e1d9b3a05",
+      "region": "global",
+      "account_id": "123456789012",
+      "tags": {},
+      "attributes": {
+        "name": [
+          "AWSReservedSSO_AdministratorAccess_4c2a6f7e1d9b3a05"
+        ],
+        "path": [
+          "/aws-reserved/sso.amazonaws.com/eu-west-1/"
+        ],
+        "max_session_duration": [
+          "3600"
+        ]
+      },
+      "relations": {},
+      "identifiers": {
+        "id": "AWSReservedSSO_AdministratorAccess_4c2a6f7e1d9b3a05",
+        "name": "AWSReservedSSO_AdministratorAccess_4c2a6f7e1d9b3a05",
+        "unique_id": "AROAAWSRESERVEDS",
+        "arn": "arn:aws:iam::123456789012:role/aws-reserved/sso.amazonaws.com/eu-west-1/AWSReservedSSO_AdministratorAccess_4c2a6f7e1d9b3a05"
+      },
+      "arn": "arn:aws:iam::123456789012:role/aws-reserved/sso.amazonaws.com/eu-west-1/AWSReservedSSO_AdministratorAccess_4c2a6f7e1d9b3a05",
+      "auto_ignore": "Role reserved by AWS (for example IAM Identity Center)"
+    },
+    {
+      "key": "aws_iam_role|global|AWSServiceRoleForElasticLoadBalancing",
+      "type": "aws_iam_role",
+      "id": "AWSServiceRoleForElasticLoadBalancing",
+      "import_id": "AWSServiceRoleForElasticLoadBalancing",
+      "name": "AWSServiceRoleForElasticLoadBalancing",
+      "region": "global",
+      "account_id": "123456789012",
+      "tags": {},
+      "attributes": {
+        "name": [
+          "AWSServiceRoleForElasticLoadBalancing"
+        ],
+        "path": [
+          "/aws-service-role/elasticloadbalancing.amazonaws.com/"
+        ],
+        "max_session_duration": [
+          "3600"
+        ]
+      },
+      "relations": {},
+      "identifiers": {
+        "id": "AWSServiceRoleForElasticLoadBalancing",
+        "name": "AWSServiceRoleForElasticLoadBalancing",
+        "unique_id": "AROAAWSSERVICERO",
+        "arn": "arn:aws:iam::123456789012:role/aws-service-role/elasticloadbalancing.amazonaws.com/AWSServiceRoleForElasticLoadBalancing"
+      },
+      "arn": "arn:aws:iam::123456789012:role/aws-service-role/elasticloadbalancing.amazonaws.com/AWSServiceRoleForElasticLoadBalancing",
+      "auto_ignore": "AWS service-linked role"
+    },
+    {
+      "key": "aws_iam_role|global|AWSServiceRoleForRDS",
+      "type": "aws_iam_role",
+      "id": "AWSServiceRoleForRDS",
+      "import_id": "AWSServiceRoleForRDS",
+      "name": "AWSServiceRoleForRDS",
+      "region": "global",
+      "account_id": "123456789012",
+      "tags": {},
+      "attributes": {
+        "name": [
+          "AWSServiceRoleForRDS"
+        ],
+        "path": [
+          "/aws-service-role/rds.amazonaws.com/"
+        ],
+        "max_session_duration": [
+          "3600"
+        ]
+      },
+      "relations": {},
+      "identifiers": {
+        "id": "AWSServiceRoleForRDS",
+        "name": "AWSServiceRoleForRDS",
+        "unique_id": "AROAAWSSERVICERO",
+        "arn": "arn:aws:iam::123456789012:role/aws-service-role/rds.amazonaws.com/AWSServiceRoleForRDS"
+      },
+      "arn": "arn:aws:iam::123456789012:role/aws-service-role/rds.amazonaws.com/AWSServiceRoleForRDS",
+      "auto_ignore": "AWS service-linked role"
+    },
+    {
+      "key": "aws_iam_role|global|OrganizationAccountAccessRole",
+      "type": "aws_iam_role",
+      "id": "OrganizationAccountAccessRole",
+      "import_id": "OrganizationAccountAccessRole",
+      "name": "OrganizationAccountAccessRole",
+      "region": "global",
+      "account_id": "123456789012",
+      "tags": {},
+      "attributes": {
+        "name": [
+          "OrganizationAccountAccessRole"
+        ],
+        "path": [
+          "/"
+        ],
+        "max_session_duration": [
+          "3600"
+        ]
+      },
+      "relations": {},
+      "identifiers": {
+        "id": "OrganizationAccountAccessRole",
+        "name": "OrganizationAccountAccessRole",
+        "unique_id": "AROAORGANIZATION",
+        "arn": "arn:aws:iam::123456789012:role/OrganizationAccountAccessRole"
+      },
+      "arn": "arn:aws:iam::123456789012:role/OrganizationAccountAccessRole"
+    },
+    {
+      "key": "aws_iam_role|global|shop-prod-web",
+      "type": "aws_iam_role",
+      "id": "shop-prod-web",
+      "import_id": "shop-prod-web",
+      "name": "shop-prod-web",
+      "region": "global",
+      "account_id": "123456789012",
+      "tags": {},
+      "attributes": {
+        "name": [
+          "shop-prod-web"
+        ],
+        "path": [
+          "/"
+        ],
+        "max_session_duration": [
+          "3600"
+        ]
+      },
+      "relations": {},
+      "identifiers": {
+        "id": "shop-prod-web",
+        "name": "shop-prod-web",
+        "unique_id": "AROASHOP-PROD-WE",
+        "arn": "arn:aws:iam::123456789012:role/shop-prod-web"
+      },
+      "arn": "arn:aws:iam::123456789012:role/shop-prod-web"
+    },
+    {
+      "key": "aws_instance|eu-west-1|i-0a1b2c3d4e5f60101",
+      "type": "aws_instance",
+      "id": "i-0a1b2c3d4e5f60101",
+      "import_id": "i-0a1b2c3d4e5f60101",
+      "name": "shop-prod-web-0",
+      "region": "eu-west-1",
+      "account_id": "123456789012",
+      "tags": {
+        "Project": "shop",
+        "ManagedBy": "terraform",
+        "Name": "shop-prod-web-0",
+        "Role": "web"
+      },
+      "attributes": {
+        "instance_type": [
+          "t3.small"
+        ],
+        "ami": [
+          "ami-0c1bc246476a5572b"
+        ],
+        "availability_zone": [
+          "eu-west-1a"
+        ],
+        "instance_state": [
+          "running"
+        ],
+        "root_device_name": [
+          "/dev/xvda"
+        ]
+      },
+      "relations": {
+        "subnet_id": [
+          "subnet-0c8d2f1b0e3e45b20"
+        ],
+        "vpc_id": [
+          "vpc-0a40d5e2c9b1f7301"
+        ],
+        "vpc_security_group_ids": [
+          "sg-0a1b2c3d4e5f60002"
+        ],
+        "attached_volume_ids": [
+          "vol-0e2b8b2b2b2b2b201",
+          "vol-0d1a7a1a1a1a1a101"
+        ],
+        "iam_instance_profile": [
+          "arn:aws:iam::123456789012:instance-profile/shop-prod-web",
+          "shop-prod-web"
+        ]
+      },
+      "identifiers": {
+        "id": "i-0a1b2c3d4e5f60101",
+        "arn": "arn:aws:ec2:eu-west-1:123456789012:instance/i-0a1b2c3d4e5f60101"
+      },
+      "arn": "arn:aws:ec2:eu-west-1:123456789012:instance/i-0a1b2c3d4e5f60101"
+    },
+    {
+      "key": "aws_instance|eu-west-1|i-0a1b2c3d4e5f60102",
+      "type": "aws_instance",
+      "id": "i-0a1b2c3d4e5f60102",
+      "import_id": "i-0a1b2c3d4e5f60102",
+      "name": "shop-prod-web-1",
+      "region": "eu-west-1",
+      "account_id": "123456789012",
+      "tags": {
+        "Project": "shop",
+        "ManagedBy": "terraform",
+        "Name": "shop-prod-web-1",
+        "Role": "web"
+      },
+      "attributes": {
+        "instance_type": [
+          "t3.small"
+        ],
+        "ami": [
+          "ami-0c1bc246476a5572b"
+        ],
+        "availability_zone": [
+          "eu-west-1b"
+        ],
+        "instance_state": [
+          "running"
+        ],
+        "root_device_name": [
+          "/dev/xvda"
+        ]
+      },
+      "relations": {
+        "subnet_id": [
+          "subnet-0c8d2f1b0e3e45b21"
+        ],
+        "vpc_id": [
+          "vpc-0a40d5e2c9b1f7301"
+        ],
+        "vpc_security_group_ids": [
+          "sg-0a1b2c3d4e5f60002"
+        ],
+        "attached_volume_ids": [
+          "vol-0e2b8b2b2b2b2b202"
+        ],
+        "iam_instance_profile": [
+          "arn:aws:iam::123456789012:instance-profile/shop-prod-web",
+          "shop-prod-web"
+        ]
+      },
+      "identifiers": {
+        "id": "i-0a1b2c3d4e5f60102",
+        "arn": "arn:aws:ec2:eu-west-1:123456789012:instance/i-0a1b2c3d4e5f60102"
+      },
+      "arn": "arn:aws:ec2:eu-west-1:123456789012:instance/i-0a1b2c3d4e5f60102"
+    },
+    {
+      "key": "aws_instance|eu-west-1|i-0a1b2c3d4e5f60103",
+      "type": "aws_instance",
+      "id": "i-0a1b2c3d4e5f60103",
+      "import_id": "i-0a1b2c3d4e5f60103",
+      "name": "shop-prod-bastion",
+      "region": "eu-west-1",
+      "account_id": "123456789012",
+      "tags": {
+        "Name": "shop-prod-bastion"
+      },
+      "attributes": {
+        "instance_type": [
+          "t3.micro"
+        ],
+        "ami": [
+          "ami-0c1bc246476a5572b"
+        ],
+        "availability_zone": [
+          "eu-west-1a"
+        ],
+        "key_name": [
+          "shop-deployer"
+        ],
+        "instance_state": [
+          "running"
+        ],
+        "root_device_name": [
+          "/dev/xvda"
+        ]
+      },
+      "relations": {
+        "subnet_id": [
+          "subnet-0b7c1e0a9f2d34a10"
+        ],
+        "vpc_id": [
+          "vpc-0a40d5e2c9b1f7301"
+        ],
+        "vpc_security_group_ids": [
+          "sg-0a1b2c3d4e5f60006"
+        ],
+        "attached_volume_ids": [
+          "vol-0e2b8b2b2b2b2b203"
+        ]
+      },
+      "identifiers": {
+        "id": "i-0a1b2c3d4e5f60103",
+        "arn": "arn:aws:ec2:eu-west-1:123456789012:instance/i-0a1b2c3d4e5f60103"
+      },
+      "arn": "arn:aws:ec2:eu-west-1:123456789012:instance/i-0a1b2c3d4e5f60103"
+    },
+    {
+      "key": "aws_instance|eu-west-1|i-0a1b2c3d4e5f60104",
+      "type": "aws_instance",
+      "id": "i-0a1b2c3d4e5f60104",
+      "import_id": "i-0a1b2c3d4e5f60104",
+      "name": "shop-prod-worker",
+      "region": "eu-west-1",
+      "account_id": "123456789012",
+      "tags": {
+        "Project": "shop",
+        "ManagedBy": "terraform",
+        "Name": "shop-prod-worker",
+        "aws:autoscaling:groupName": "shop-prod-workers"
+      },
+      "attributes": {
+        "instance_type": [
+          "t3.medium"
+        ],
+        "ami": [
+          "ami-0c1bc246476a5572b"
+        ],
+        "availability_zone": [
+          "eu-west-1b"
+        ],
+        "instance_state": [
+          "running"
+        ],
+        "root_device_name": [
+          "/dev/xvda"
+        ]
+      },
+      "relations": {
+        "subnet_id": [
+          "subnet-0c8d2f1b0e3e45b21"
+        ],
+        "vpc_id": [
+          "vpc-0a40d5e2c9b1f7301"
+        ],
+        "vpc_security_group_ids": [
+          "sg-0a1b2c3d4e5f60002"
+        ],
+        "attached_volume_ids": [
+          "vol-0e2b8b2b2b2b2b204"
+        ]
+      },
+      "identifiers": {
+        "id": "i-0a1b2c3d4e5f60104",
+        "arn": "arn:aws:ec2:eu-west-1:123456789012:instance/i-0a1b2c3d4e5f60104"
+      },
+      "arn": "arn:aws:ec2:eu-west-1:123456789012:instance/i-0a1b2c3d4e5f60104"
+    },
+    {
+      "key": "aws_internet_gateway|eu-west-1|igw-01d2c3b4a5968778a",
+      "type": "aws_internet_gateway",
+      "id": "igw-01d2c3b4a5968778a",
+      "import_id": "igw-01d2c3b4a5968778a",
+      "name": "shop-prod-igw-old",
+      "region": "eu-west-1",
+      "account_id": "123456789012",
+      "tags": {
+        "Project": "shop",
+        "ManagedBy": "terraform",
+        "Name": "shop-prod-igw-old"
+      },
+      "attributes": {},
+      "relations": {
+        "vpc_id": [
+          "vpc-0f3c1b9e8d7a60002"
+        ]
+      },
+      "identifiers": {
+        "id": "igw-01d2c3b4a5968778a"
+      }
+    },
+    {
+      "key": "aws_internet_gateway|eu-west-1|igw-0a1b2c3d4e5f67890",
+      "type": "aws_internet_gateway",
+      "id": "igw-0a1b2c3d4e5f67890",
+      "import_id": "igw-0a1b2c3d4e5f67890",
+      "name": "shop-prod-igw",
+      "region": "eu-west-1",
+      "account_id": "123456789012",
+      "tags": {
+        "Project": "shop",
+        "ManagedBy": "terraform",
+        "Name": "shop-prod-igw"
+      },
+      "attributes": {},
+      "relations": {
+        "vpc_id": [
+          "vpc-0a40d5e2c9b1f7301"
+        ]
+      },
+      "identifiers": {
+        "id": "igw-0a1b2c3d4e5f67890"
+      }
+    },
+    {
+      "key": "aws_internet_gateway|eu-west-1|igw-0f9e8d7c6b5a43210",
+      "type": "aws_internet_gateway",
+      "id": "igw-0f9e8d7c6b5a43210",
+      "import_id": "igw-0f9e8d7c6b5a43210",
+      "name": "",
+      "region": "eu-west-1",
+      "account_id": "123456789012",
+      "tags": {},
+      "attributes": {},
+      "relations": {
+        "vpc_id": [
+          "vpc-0de1a2b3c4d5e6f70"
+        ]
+      },
+      "identifiers": {
+        "id": "igw-0f9e8d7c6b5a43210"
+      },
+      "auto_ignore": "Internet gateway of the default VPC"
+    },
+    {
+      "key": "aws_key_pair|eu-west-1|shop-deployer",
+      "type": "aws_key_pair",
+      "id": "shop-deployer",
+      "import_id": "shop-deployer",
+      "name": "",
+      "region": "eu-west-1",
+      "account_id": "123456789012",
+      "tags": {},
+      "attributes": {
+        "key_name": [
+          "shop-deployer"
+        ],
+        "key_type": [
+          "ed25519"
+        ]
+      },
+      "relations": {},
+      "identifiers": {
+        "id": "shop-deployer",
+        "key_name": "shop-deployer",
+        "key_pair_id": "key-0a1b2c3d4e5f67890",
+        "arn": "arn:aws:ec2:eu-west-1:123456789012:key-pair/shop-deployer"
+      },
+      "arn": "arn:aws:ec2:eu-west-1:123456789012:key-pair/shop-deployer"
+    },
+    {
+      "key": "aws_lb|eu-west-1|arn:aws:elasticloadbalancing:eu-west-1:123456789012:loadbalancer/app/shop-prod-alb/6d0ecf831eec9f09",
+      "type": "aws_lb",
+      "id": "arn:aws:elasticloadbalancing:eu-west-1:123456789012:loadbalancer/app/shop-prod-alb/6d0ecf831eec9f09",
+      "import_id": "arn:aws:elasticloadbalancing:eu-west-1:123456789012:loadbalancer/app/shop-prod-alb/6d0ecf831eec9f09",
+      "name": "shop-prod-alb",
+      "region": "eu-west-1",
+      "account_id": "123456789012",
+      "tags": {
+        "Project": "shop",
+        "ManagedBy": "terraform"
+      },
+      "attributes": {
+        "name": [
+          "shop-prod-alb"
+        ],
+        "load_balancer_type": [
+          "application"
+        ],
+        "internal": [
+          "false"
+        ],
+        "ip_address_type": [
+          "ipv4"
+        ],
+        "dns_name": [
+          "shop-prod-alb-1234567890.eu-west-1.elb.amazonaws.com"
+        ]
+      },
+      "relations": {
+        "vpc_id": [
+          "vpc-0a40d5e2c9b1f7301"
+        ],
+        "subnets": [
+          "subnet-0b7c1e0a9f2d34a10",
+          "subnet-0b7c1e0a9f2d34a11"
+        ],
+        "security_groups": [
+          "sg-0a1b2c3d4e5f60001"
+        ]
+      },
+      "identifiers": {
+        "id": "arn:aws:elasticloadbalancing:eu-west-1:123456789012:loadbalancer/app/shop-prod-alb/6d0ecf831eec9f09",
+        "name": "shop-prod-alb",
+        "arn_suffix": "app/shop-prod-alb/6d0ecf831eec9f09",
+        "arn": "arn:aws:elasticloadbalancing:eu-west-1:123456789012:loadbalancer/app/shop-prod-alb/6d0ecf831eec9f09"
+      },
+      "arn": "arn:aws:elasticloadbalancing:eu-west-1:123456789012:loadbalancer/app/shop-prod-alb/6d0ecf831eec9f09"
+    },
+    {
+      "key": "aws_lb_listener|eu-west-1|arn:aws:elasticloadbalancing:eu-west-1:123456789012:listener/app/shop-prod-alb/6d0ecf831eec9f09/9f8e7d6c5b4a3210",
+      "type": "aws_lb_listener",
+      "id": "arn:aws:elasticloadbalancing:eu-west-1:123456789012:listener/app/shop-prod-alb/6d0ecf831eec9f09/9f8e7d6c5b4a3210",
+      "import_id": "arn:aws:elasticloadbalancing:eu-west-1:123456789012:listener/app/shop-prod-alb/6d0ecf831eec9f09/9f8e7d6c5b4a3210",
+      "name": "shop-prod-alb:80",
+      "region": "eu-west-1",
+      "account_id": "123456789012",
+      "tags": {
+        "Project": "shop",
+        "ManagedBy": "terraform"
+      },
+      "attributes": {
+        "port": [
+          "80"
+        ],
+        "protocol": [
+          "HTTP"
+        ]
+      },
+      "relations": {
+        "load_balancer_arn": [
+          "arn:aws:elasticloadbalancing:eu-west-1:123456789012:loadbalancer/app/shop-prod-alb/6d0ecf831eec9f09"
+        ],
+        "default_action.target_group_arn": [
+          "arn:aws:elasticloadbalancing:eu-west-1:123456789012:targetgroup/shop-prod-web/1a2b3c4d5e6f7a8b"
+        ]
+      },
+      "identifiers": {
+        "id": "arn:aws:elasticloadbalancing:eu-west-1:123456789012:listener/app/shop-prod-alb/6d0ecf831eec9f09/9f8e7d6c5b4a3210",
+        "arn": "arn:aws:elasticloadbalancing:eu-west-1:123456789012:listener/app/shop-prod-alb/6d0ecf831eec9f09/9f8e7d6c5b4a3210"
+      },
+      "arn": "arn:aws:elasticloadbalancing:eu-west-1:123456789012:listener/app/shop-prod-alb/6d0ecf831eec9f09/9f8e7d6c5b4a3210"
+    },
+    {
+      "key": "aws_lb_target_group|eu-west-1|arn:aws:elasticloadbalancing:eu-west-1:123456789012:targetgroup/shop-prod-web/1a2b3c4d5e6f7a8b",
+      "type": "aws_lb_target_group",
+      "id": "arn:aws:elasticloadbalancing:eu-west-1:123456789012:targetgroup/shop-prod-web/1a2b3c4d5e6f7a8b",
+      "import_id": "arn:aws:elasticloadbalancing:eu-west-1:123456789012:targetgroup/shop-prod-web/1a2b3c4d5e6f7a8b",
+      "name": "shop-prod-web",
+      "region": "eu-west-1",
+      "account_id": "123456789012",
+      "tags": {
+        "Project": "shop",
+        "ManagedBy": "terraform"
+      },
+      "attributes": {
+        "name": [
+          "shop-prod-web"
+        ],
+        "port": [
+          "80"
+        ],
+        "protocol": [
+          "HTTP"
+        ],
+        "target_type": [
+          "instance"
+        ],
+        "health_check.path": [
+          "/healthz"
+        ]
+      },
+      "relations": {
+        "vpc_id": [
+          "vpc-0a40d5e2c9b1f7301"
+        ],
+        "load_balancer_arns": [
+          "arn:aws:elasticloadbalancing:eu-west-1:123456789012:loadbalancer/app/shop-prod-alb/6d0ecf831eec9f09"
+        ]
+      },
+      "identifiers": {
+        "id": "arn:aws:elasticloadbalancing:eu-west-1:123456789012:targetgroup/shop-prod-web/1a2b3c4d5e6f7a8b",
+        "name": "shop-prod-web",
+        "arn": "arn:aws:elasticloadbalancing:eu-west-1:123456789012:targetgroup/shop-prod-web/1a2b3c4d5e6f7a8b"
+      },
+      "arn": "arn:aws:elasticloadbalancing:eu-west-1:123456789012:targetgroup/shop-prod-web/1a2b3c4d5e6f7a8b"
+    },
+    {
+      "key": "aws_nat_gateway|eu-west-1|nat-0a9b8c7d6e5f43210",
+      "type": "aws_nat_gateway",
+      "id": "nat-0a9b8c7d6e5f43210",
+      "import_id": "nat-0a9b8c7d6e5f43210",
+      "name": "shop-prod-nat",
+      "region": "eu-west-1",
+      "account_id": "123456789012",
+      "tags": {
+        "Project": "shop",
+        "ManagedBy": "terraform",
+        "Name": "shop-prod-nat"
+      },
+      "attributes": {
+        "connectivity_type": [
+          "public"
+        ],
+        "public_ip": [
+          "52.18.44.10"
+        ]
+      },
+      "relations": {
+        "subnet_id": [
+          "subnet-0b7c1e0a9f2d34a10"
+        ],
+        "vpc_id": [
+          "vpc-0a40d5e2c9b1f7301"
+        ],
+        "allocation_id": [
+          "eipalloc-0a5b6c7d8e9f01234"
+        ]
+      },
+      "identifiers": {
+        "id": "nat-0a9b8c7d6e5f43210"
+      }
+    },
+    {
+      "key": "aws_route_table|eu-west-1|rtb-0a1b2c3d4e5f6a7b8",
+      "type": "aws_route_table",
+      "id": "rtb-0a1b2c3d4e5f6a7b8",
+      "import_id": "rtb-0a1b2c3d4e5f6a7b8",
+      "name": "shop-prod-public",
+      "region": "eu-west-1",
+      "account_id": "123456789012",
+      "tags": {
+        "Project": "shop",
+        "ManagedBy": "terraform",
+        "Name": "shop-prod-public"
+      },
+      "attributes": {
+        "route.cidr_block": [
+          "0.0.0.0/0"
+        ],
+        "route.destination": [
+          "0.0.0.0/0"
+        ]
+      },
+      "relations": {
+        "vpc_id": [
+          "vpc-0a40d5e2c9b1f7301"
+        ],
+        "route.gateway_id": [
+          "igw-0a1b2c3d4e5f67890"
+        ],
+        "association.subnet_id": [
+          "subnet-0b7c1e0a9f2d34a10",
+          "subnet-0b7c1e0a9f2d34a11"
+        ]
+      },
+      "identifiers": {
+        "id": "rtb-0a1b2c3d4e5f6a7b8"
+      }
+    },
+    {
+      "key": "aws_route_table|eu-west-1|rtb-0b2c3d4e5f6a7b8c9",
+      "type": "aws_route_table",
+      "id": "rtb-0b2c3d4e5f6a7b8c9",
+      "import_id": "rtb-0b2c3d4e5f6a7b8c9",
+      "name": "shop-prod-private",
+      "region": "eu-west-1",
+      "account_id": "123456789012",
+      "tags": {
+        "Project": "shop",
+        "ManagedBy": "terraform",
+        "Name": "shop-prod-private"
+      },
+      "attributes": {
+        "route.cidr_block": [
+          "0.0.0.0/0"
+        ],
+        "route.destination": [
+          "0.0.0.0/0"
+        ]
+      },
+      "relations": {
+        "vpc_id": [
+          "vpc-0a40d5e2c9b1f7301"
+        ],
+        "route.nat_gateway_id": [
+          "nat-0a9b8c7d6e5f43210"
+        ],
+        "association.subnet_id": [
+          "subnet-0c8d2f1b0e3e45b20",
+          "subnet-0c8d2f1b0e3e45b21"
+        ]
+      },
+      "identifiers": {
+        "id": "rtb-0b2c3d4e5f6a7b8c9"
+      }
+    },
+    {
+      "key": "aws_route_table|eu-west-1|rtb-0c3d4e5f6a7b8c9d0",
+      "type": "aws_route_table",
+      "id": "rtb-0c3d4e5f6a7b8c9d0",
+      "import_id": "rtb-0c3d4e5f6a7b8c9d0",
+      "name": "",
+      "region": "eu-west-1",
+      "account_id": "123456789012",
+      "tags": {},
+      "attributes": {
+        "main": [
+          "true"
+        ]
+      },
+      "relations": {
+        "vpc_id": [
+          "vpc-0a40d5e2c9b1f7301"
+        ]
+      },
+      "identifiers": {
+        "id": "rtb-0c3d4e5f6a7b8c9d0"
+      },
+      "auto_ignore": "Main route table created with the VPC (manage it with aws_default_route_table if needed)"
+    },
+    {
+      "key": "aws_route_table|eu-west-1|rtb-0d4e5f6a7b8c9d0e1",
+      "type": "aws_route_table",
+      "id": "rtb-0d4e5f6a7b8c9d0e1",
+      "import_id": "rtb-0d4e5f6a7b8c9d0e1",
+      "name": "",
+      "region": "eu-west-1",
+      "account_id": "123456789012",
+      "tags": {},
+      "attributes": {
+        "main": [
+          "true"
+        ],
+        "route.cidr_block": [
+          "0.0.0.0/0"
+        ],
+        "route.destination": [
+          "0.0.0.0/0"
+        ]
+      },
+      "relations": {
+        "vpc_id": [
+          "vpc-0de1a2b3c4d5e6f70"
+        ],
+        "route.gateway_id": [
+          "igw-0f9e8d7c6b5a43210"
+        ]
+      },
+      "identifiers": {
+        "id": "rtb-0d4e5f6a7b8c9d0e1"
+      },
+      "auto_ignore": "Main route table of the default VPC"
+    },
+    {
+      "key": "aws_s3_bucket|eu-west-1|cf-templates-1x2y3z4w5v6u-eu-west-1",
+      "type": "aws_s3_bucket",
+      "id": "cf-templates-1x2y3z4w5v6u-eu-west-1",
+      "import_id": "cf-templates-1x2y3z4w5v6u-eu-west-1",
+      "name": "cf-templates-1x2y3z4w5v6u-eu-west-1",
+      "region": "eu-west-1",
+      "account_id": "123456789012",
+      "tags": {},
+      "attributes": {
+        "bucket": [
+          "cf-templates-1x2y3z4w5v6u-eu-west-1"
+        ]
+      },
+      "relations": {},
+      "identifiers": {
+        "id": "cf-templates-1x2y3z4w5v6u-eu-west-1",
+        "bucket": "cf-templates-1x2y3z4w5v6u-eu-west-1",
+        "arn": "arn:aws:s3:::cf-templates-1x2y3z4w5v6u-eu-west-1"
+      },
+      "arn": "arn:aws:s3:::cf-templates-1x2y3z4w5v6u-eu-west-1"
+    },
+    {
+      "key": "aws_s3_bucket|eu-west-1|shop-prod-assets-7f3a",
+      "type": "aws_s3_bucket",
+      "id": "shop-prod-assets-7f3a",
+      "import_id": "shop-prod-assets-7f3a",
+      "name": "shop-prod-assets-7f3a",
+      "region": "eu-west-1",
+      "account_id": "123456789012",
+      "tags": {
+        "Project": "shop",
+        "ManagedBy": "terraform"
+      },
+      "attributes": {
+        "bucket": [
+          "shop-prod-assets-7f3a"
+        ]
+      },
+      "relations": {},
+      "identifiers": {
+        "id": "shop-prod-assets-7f3a",
+        "bucket": "shop-prod-assets-7f3a",
+        "arn": "arn:aws:s3:::shop-prod-assets-7f3a"
+      },
+      "arn": "arn:aws:s3:::shop-prod-assets-7f3a"
+    },
+    {
+      "key": "aws_s3_bucket|eu-west-1|shop-prod-logs-legacy",
+      "type": "aws_s3_bucket",
+      "id": "shop-prod-logs-legacy",
+      "import_id": "shop-prod-logs-legacy",
+      "name": "shop-prod-logs-legacy",
+      "region": "eu-west-1",
+      "account_id": "123456789012",
+      "tags": {
+        "Project": "shop"
+      },
+      "attributes": {
+        "bucket": [
+          "shop-prod-logs-legacy"
+        ]
+      },
+      "relations": {},
+      "identifiers": {
+        "id": "shop-prod-logs-legacy",
+        "bucket": "shop-prod-logs-legacy",
+        "arn": "arn:aws:s3:::shop-prod-logs-legacy"
+      },
+      "arn": "arn:aws:s3:::shop-prod-logs-legacy"
+    },
+    {
+      "key": "aws_security_group|eu-west-1|sg-0a1b2c3d4e5f60001",
+      "type": "aws_security_group",
+      "id": "sg-0a1b2c3d4e5f60001",
+      "import_id": "sg-0a1b2c3d4e5f60001",
+      "name": "shop-prod-alb",
+      "region": "eu-west-1",
+      "account_id": "123456789012",
+      "tags": {
+        "Project": "shop",
+        "ManagedBy": "terraform"
+      },
+      "attributes": {
+        "name": [
+          "shop-prod-alb"
+        ],
+        "description": [
+          "Public HTTP access to the load balancer"
+        ]
+      },
+      "relations": {
+        "vpc_id": [
+          "vpc-0a40d5e2c9b1f7301"
+        ]
+      },
+      "identifiers": {
+        "id": "sg-0a1b2c3d4e5f60001",
+        "name": "shop-prod-alb",
+        "arn": "arn:aws:ec2:eu-west-1:123456789012:security-group/sg-0a1b2c3d4e5f60001"
+      },
+      "arn": "arn:aws:ec2:eu-west-1:123456789012:security-group/sg-0a1b2c3d4e5f60001"
+    },
+    {
+      "key": "aws_security_group|eu-west-1|sg-0a1b2c3d4e5f60002",
+      "type": "aws_security_group",
+      "id": "sg-0a1b2c3d4e5f60002",
+      "import_id": "sg-0a1b2c3d4e5f60002",
+      "name": "shop-prod-web",
+      "region": "eu-west-1",
+      "account_id": "123456789012",
+      "tags": {
+        "Project": "shop",
+        "ManagedBy": "terraform"
+      },
+      "attributes": {
+        "name": [
+          "shop-prod-web"
+        ],
+        "description": [
+          "Web servers"
+        ]
+      },
+      "relations": {
+        "vpc_id": [
+          "vpc-0a40d5e2c9b1f7301"
+        ],
+        "ingress.security_groups": [
+          "sg-0a1b2c3d4e5f60001"
+        ]
+      },
+      "identifiers": {
+        "id": "sg-0a1b2c3d4e5f60002",
+        "name": "shop-prod-web",
+        "arn": "arn:aws:ec2:eu-west-1:123456789012:security-group/sg-0a1b2c3d4e5f60002"
+      },
+      "arn": "arn:aws:ec2:eu-west-1:123456789012:security-group/sg-0a1b2c3d4e5f60002"
+    },
+    {
+      "key": "aws_security_group|eu-west-1|sg-0a1b2c3d4e5f60003",
+      "type": "aws_security_group",
+      "id": "sg-0a1b2c3d4e5f60003",
+      "import_id": "sg-0a1b2c3d4e5f60003",
+      "name": "shop-prod-db",
+      "region": "eu-west-1",
+      "account_id": "123456789012",
+      "tags": {
+        "Project": "shop",
+        "ManagedBy": "terraform"
+      },
+      "attributes": {
+        "name": [
+          "shop-prod-db"
+        ],
+        "description": [
+          "PostgreSQL"
+        ]
+      },
+      "relations": {
+        "vpc_id": [
+          "vpc-0a40d5e2c9b1f7301"
+        ],
+        "ingress.security_groups": [
+          "sg-0a1b2c3d4e5f60002"
+        ]
+      },
+      "identifiers": {
+        "id": "sg-0a1b2c3d4e5f60003",
+        "name": "shop-prod-db",
+        "arn": "arn:aws:ec2:eu-west-1:123456789012:security-group/sg-0a1b2c3d4e5f60003"
+      },
+      "arn": "arn:aws:ec2:eu-west-1:123456789012:security-group/sg-0a1b2c3d4e5f60003"
+    },
+    {
+      "key": "aws_security_group|eu-west-1|sg-0a1b2c3d4e5f60004",
+      "type": "aws_security_group",
+      "id": "sg-0a1b2c3d4e5f60004",
+      "import_id": "sg-0a1b2c3d4e5f60004",
+      "name": "default",
+      "region": "eu-west-1",
+      "account_id": "123456789012",
+      "tags": {},
+      "attributes": {
+        "name": [
+          "default"
+        ],
+        "description": [
+          "default VPC security group"
+        ]
+      },
+      "relations": {
+        "vpc_id": [
+          "vpc-0a40d5e2c9b1f7301"
+        ]
+      },
+      "identifiers": {
+        "id": "sg-0a1b2c3d4e5f60004",
+        "name": "default",
+        "arn": "arn:aws:ec2:eu-west-1:123456789012:security-group/sg-0a1b2c3d4e5f60004"
+      },
+      "arn": "arn:aws:ec2:eu-west-1:123456789012:security-group/sg-0a1b2c3d4e5f60004",
+      "auto_ignore": "Default security group of vpc-0a40d5e2c9b1f7301 (manage it with aws_default_security_group if needed)"
+    },
+    {
+      "key": "aws_security_group|eu-west-1|sg-0a1b2c3d4e5f60005",
+      "type": "aws_security_group",
+      "id": "sg-0a1b2c3d4e5f60005",
+      "import_id": "sg-0a1b2c3d4e5f60005",
+      "name": "default",
+      "region": "eu-west-1",
+      "account_id": "123456789012",
+      "tags": {},
+      "attributes": {
+        "name": [
+          "default"
+        ],
+        "description": [
+          "default VPC security group"
+        ]
+      },
+      "relations": {
+        "vpc_id": [
+          "vpc-0de1a2b3c4d5e6f70"
+        ]
+      },
+      "identifiers": {
+        "id": "sg-0a1b2c3d4e5f60005",
+        "name": "default",
+        "arn": "arn:aws:ec2:eu-west-1:123456789012:security-group/sg-0a1b2c3d4e5f60005"
+      },
+      "arn": "arn:aws:ec2:eu-west-1:123456789012:security-group/sg-0a1b2c3d4e5f60005",
+      "auto_ignore": "Default security group of vpc-0de1a2b3c4d5e6f70 (manage it with aws_default_security_group if needed)"
+    },
+    {
+      "key": "aws_security_group|eu-west-1|sg-0a1b2c3d4e5f60006",
+      "type": "aws_security_group",
+      "id": "sg-0a1b2c3d4e5f60006",
+      "import_id": "sg-0a1b2c3d4e5f60006",
+      "name": "launch-wizard-1",
+      "region": "eu-west-1",
+      "account_id": "123456789012",
+      "tags": {},
+      "attributes": {
+        "name": [
+          "launch-wizard-1"
+        ],
+        "description": [
+          "launch-wizard-1 created 2025-03-02T10:14:51.018Z"
+        ]
+      },
+      "relations": {
+        "vpc_id": [
+          "vpc-0a40d5e2c9b1f7301"
+        ]
+      },
+      "identifiers": {
+        "id": "sg-0a1b2c3d4e5f60006",
+        "name": "launch-wizard-1",
+        "arn": "arn:aws:ec2:eu-west-1:123456789012:security-group/sg-0a1b2c3d4e5f60006"
+      },
+      "arn": "arn:aws:ec2:eu-west-1:123456789012:security-group/sg-0a1b2c3d4e5f60006"
+    },
+    {
+      "key": "aws_subnet|eu-west-1|subnet-0b7c1e0a9f2d34a10",
+      "type": "aws_subnet",
+      "id": "subnet-0b7c1e0a9f2d34a10",
+      "import_id": "subnet-0b7c1e0a9f2d34a10",
+      "name": "shop-prod-public-0",
+      "region": "eu-west-1",
+      "account_id": "123456789012",
+      "tags": {
+        "Project": "shop",
+        "ManagedBy": "terraform",
+        "Name": "shop-prod-public-0",
+        "Tier": "public"
+      },
+      "attributes": {
+        "cidr_block": [
+          "10.40.0.0/24"
+        ],
+        "availability_zone": [
+          "eu-west-1a"
+        ],
+        "map_public_ip_on_launch": [
+          "true"
+        ]
+      },
+      "relations": {
+        "vpc_id": [
+          "vpc-0a40d5e2c9b1f7301"
+        ]
+      },
+      "identifiers": {
+        "id": "subnet-0b7c1e0a9f2d34a10"
+      }
+    },
+    {
+      "key": "aws_subnet|eu-west-1|subnet-0b7c1e0a9f2d34a11",
+      "type": "aws_subnet",
+      "id": "subnet-0b7c1e0a9f2d34a11",
+      "import_id": "subnet-0b7c1e0a9f2d34a11",
+      "name": "shop-prod-public-1",
+      "region": "eu-west-1",
+      "account_id": "123456789012",
+      "tags": {
+        "Project": "shop",
+        "ManagedBy": "terraform",
+        "Name": "shop-prod-public-1",
+        "Tier": "public"
+      },
+      "attributes": {
+        "cidr_block": [
+          "10.40.1.0/24"
+        ],
+        "availability_zone": [
+          "eu-west-1b"
+        ],
+        "map_public_ip_on_launch": [
+          "true"
+        ]
+      },
+      "relations": {
+        "vpc_id": [
+          "vpc-0a40d5e2c9b1f7301"
+        ]
+      },
+      "identifiers": {
+        "id": "subnet-0b7c1e0a9f2d34a11"
+      }
+    },
+    {
+      "key": "aws_subnet|eu-west-1|subnet-0c8d2f1b0e3e45b20",
+      "type": "aws_subnet",
+      "id": "subnet-0c8d2f1b0e3e45b20",
+      "import_id": "subnet-0c8d2f1b0e3e45b20",
+      "name": "shop-prod-private-0",
+      "region": "eu-west-1",
+      "account_id": "123456789012",
+      "tags": {
+        "Project": "shop",
+        "ManagedBy": "terraform",
+        "Name": "shop-prod-private-0",
+        "Tier": "private"
+      },
+      "attributes": {
+        "cidr_block": [
+          "10.40.10.0/24"
+        ],
+        "availability_zone": [
+          "eu-west-1a"
+        ],
+        "map_public_ip_on_launch": [
+          "false"
+        ]
+      },
+      "relations": {
+        "vpc_id": [
+          "vpc-0a40d5e2c9b1f7301"
+        ]
+      },
+      "identifiers": {
+        "id": "subnet-0c8d2f1b0e3e45b20"
+      }
+    },
+    {
+      "key": "aws_subnet|eu-west-1|subnet-0c8d2f1b0e3e45b21",
+      "type": "aws_subnet",
+      "id": "subnet-0c8d2f1b0e3e45b21",
+      "import_id": "subnet-0c8d2f1b0e3e45b21",
+      "name": "shop-prod-private-1",
+      "region": "eu-west-1",
+      "account_id": "123456789012",
+      "tags": {
+        "Project": "shop",
+        "ManagedBy": "terraform",
+        "Name": "shop-prod-private-1",
+        "Tier": "private"
+      },
+      "attributes": {
+        "cidr_block": [
+          "10.40.11.0/24"
+        ],
+        "availability_zone": [
+          "eu-west-1b"
+        ],
+        "map_public_ip_on_launch": [
+          "false"
+        ]
+      },
+      "relations": {
+        "vpc_id": [
+          "vpc-0a40d5e2c9b1f7301"
+        ]
+      },
+      "identifiers": {
+        "id": "subnet-0c8d2f1b0e3e45b21"
+      }
+    },
+    {
+      "key": "aws_subnet|eu-west-1|subnet-0d9e3a2c1f4f56c30",
+      "type": "aws_subnet",
+      "id": "subnet-0d9e3a2c1f4f56c30",
+      "import_id": "subnet-0d9e3a2c1f4f56c30",
+      "name": "shop-prod-public-0",
+      "region": "eu-west-1",
+      "account_id": "123456789012",
+      "tags": {
+        "Project": "shop",
+        "ManagedBy": "terraform",
+        "Name": "shop-prod-public-0",
+        "Tier": "public"
+      },
+      "attributes": {
+        "cidr_block": [
+          "10.40.0.0/24"
+        ],
+        "availability_zone": [
+          "eu-west-1a"
+        ],
+        "map_public_ip_on_launch": [
+          "true"
+        ]
+      },
+      "relations": {
+        "vpc_id": [
+          "vpc-0f3c1b9e8d7a60002"
+        ]
+      },
+      "identifiers": {
+        "id": "subnet-0d9e3a2c1f4f56c30"
+      }
+    },
+    {
+      "key": "aws_subnet|eu-west-1|subnet-0e0f4b3d2a5a67d40",
+      "type": "aws_subnet",
+      "id": "subnet-0e0f4b3d2a5a67d40",
+      "import_id": "subnet-0e0f4b3d2a5a67d40",
+      "name": "",
+      "region": "eu-west-1",
+      "account_id": "123456789012",
+      "tags": {},
+      "attributes": {
+        "cidr_block": [
+          "172.31.0.0/20"
+        ],
+        "availability_zone": [
+          "eu-west-1a"
+        ],
+        "map_public_ip_on_launch": [
+          "true"
+        ],
+        "default_for_az": [
+          "true"
+        ]
+      },
+      "relations": {
+        "vpc_id": [
+          "vpc-0de1a2b3c4d5e6f70"
+        ]
+      },
+      "identifiers": {
+        "id": "subnet-0e0f4b3d2a5a67d40"
+      },
+      "auto_ignore": "Default subnet of the default VPC"
+    },
+    {
+      "key": "aws_subnet|eu-west-1|subnet-0e0f4b3d2a5a67d41",
+      "type": "aws_subnet",
+      "id": "subnet-0e0f4b3d2a5a67d41",
+      "import_id": "subnet-0e0f4b3d2a5a67d41",
+      "name": "",
+      "region": "eu-west-1",
+      "account_id": "123456789012",
+      "tags": {},
+      "attributes": {
+        "cidr_block": [
+          "172.31.16.0/20"
+        ],
+        "availability_zone": [
+          "eu-west-1b"
+        ],
+        "map_public_ip_on_launch": [
+          "true"
+        ],
+        "default_for_az": [
+          "true"
+        ]
+      },
+      "relations": {
+        "vpc_id": [
+          "vpc-0de1a2b3c4d5e6f70"
+        ]
+      },
+      "identifiers": {
+        "id": "subnet-0e0f4b3d2a5a67d41"
+      },
+      "auto_ignore": "Default subnet of the default VPC"
+    },
+    {
+      "key": "aws_subnet|eu-west-1|subnet-0e0f4b3d2a5a67d42",
+      "type": "aws_subnet",
+      "id": "subnet-0e0f4b3d2a5a67d42",
+      "import_id": "subnet-0e0f4b3d2a5a67d42",
+      "name": "",
+      "region": "eu-west-1",
+      "account_id": "123456789012",
+      "tags": {},
+      "attributes": {
+        "cidr_block": [
+          "172.31.32.0/20"
+        ],
+        "availability_zone": [
+          "eu-west-1c"
+        ],
+        "map_public_ip_on_launch": [
+          "true"
+        ],
+        "default_for_az": [
+          "true"
+        ]
+      },
+      "relations": {
+        "vpc_id": [
+          "vpc-0de1a2b3c4d5e6f70"
+        ]
+      },
+      "identifiers": {
+        "id": "subnet-0e0f4b3d2a5a67d42"
+      },
+      "auto_ignore": "Default subnet of the default VPC"
+    },
+    {
+      "key": "aws_vpc|eu-west-1|vpc-0a40d5e2c9b1f7301",
+      "type": "aws_vpc",
+      "id": "vpc-0a40d5e2c9b1f7301",
+      "import_id": "vpc-0a40d5e2c9b1f7301",
+      "name": "shop-prod-vpc",
+      "region": "eu-west-1",
+      "account_id": "123456789012",
+      "tags": {
+        "Project": "shop",
+        "ManagedBy": "terraform",
+        "Name": "shop-prod-vpc"
+      },
+      "attributes": {
+        "cidr_block": [
+          "10.40.0.0/16"
+        ],
+        "instance_tenancy": [
+          "default"
+        ]
+      },
+      "relations": {},
+      "identifiers": {
+        "id": "vpc-0a40d5e2c9b1f7301"
+      }
+    },
+    {
+      "key": "aws_vpc|eu-west-1|vpc-0de1a2b3c4d5e6f70",
+      "type": "aws_vpc",
+      "id": "vpc-0de1a2b3c4d5e6f70",
+      "import_id": "vpc-0de1a2b3c4d5e6f70",
+      "name": "",
+      "region": "eu-west-1",
+      "account_id": "123456789012",
+      "tags": {},
+      "attributes": {
+        "cidr_block": [
+          "172.31.0.0/16"
+        ],
+        "instance_tenancy": [
+          "default"
+        ],
+        "is_default": [
+          "true"
+        ]
+      },
+      "relations": {},
+      "identifiers": {
+        "id": "vpc-0de1a2b3c4d5e6f70"
+      },
+      "auto_ignore": "Default VPC created by AWS"
+    },
+    {
+      "key": "aws_vpc|eu-west-1|vpc-0f3c1b9e8d7a60002",
+      "type": "aws_vpc",
+      "id": "vpc-0f3c1b9e8d7a60002",
+      "import_id": "vpc-0f3c1b9e8d7a60002",
+      "name": "shop-prod-vpc-old",
+      "region": "eu-west-1",
+      "account_id": "123456789012",
+      "tags": {
+        "Project": "shop",
+        "ManagedBy": "terraform",
+        "Name": "shop-prod-vpc-old"
+      },
+      "attributes": {
+        "cidr_block": [
+          "10.40.0.0/16"
+        ],
+        "instance_tenancy": [
+          "default"
+        ]
+      },
+      "relations": {},
+      "identifiers": {
+        "id": "vpc-0f3c1b9e8d7a60002"
+      }
+    }
+  ],
+  "coverage": [
+    {
+      "region": "eu-west-1",
+      "service": "ec2:DescribeVpcs",
+      "type": "aws_vpc",
+      "count": 3,
+      "status": "ok"
+    },
+    {
+      "region": "eu-west-1",
+      "service": "ec2:DescribeSubnets",
+      "type": "aws_subnet",
+      "count": 8,
+      "status": "ok"
+    },
+    {
+      "region": "eu-west-1",
+      "service": "ec2:DescribeRouteTables",
+      "type": "aws_route_table",
+      "count": 4,
+      "status": "ok"
+    },
+    {
+      "region": "eu-west-1",
+      "service": "ec2:DescribeInternetGateways",
+      "type": "aws_internet_gateway",
+      "count": 3,
+      "status": "ok"
+    },
+    {
+      "region": "eu-west-1",
+      "service": "ec2:DescribeNatGateways",
+      "type": "aws_nat_gateway",
+      "count": 1,
+      "status": "ok"
+    },
+    {
+      "region": "eu-west-1",
+      "service": "ec2:DescribeSecurityGroups",
+      "type": "aws_security_group",
+      "count": 6,
+      "status": "ok"
+    },
+    {
+      "region": "eu-west-1",
+      "service": "ec2:DescribeSecurityGroupRules",
+      "type": "aws_vpc_security_group_rule",
+      "count": 0,
+      "status": "ok"
+    },
+    {
+      "region": "eu-west-1",
+      "service": "ec2:DescribeInstances",
+      "type": "aws_instance",
+      "count": 4,
+      "status": "ok"
+    },
+    {
+      "region": "eu-west-1",
+      "service": "ec2:DescribeVolumes",
+      "type": "aws_ebs_volume",
+      "count": 6,
+      "status": "ok"
+    },
+    {
+      "region": "eu-west-1",
+      "service": "ec2:DescribeAddresses",
+      "type": "aws_eip",
+      "count": 2,
+      "status": "ok"
+    },
+    {
+      "region": "eu-west-1",
+      "service": "ec2:DescribeKeyPairs",
+      "type": "aws_key_pair",
+      "count": 1,
+      "status": "ok"
+    },
+    {
+      "region": "eu-west-1",
+      "service": "elasticloadbalancing:DescribeLoadBalancers",
+      "type": "aws_lb",
+      "count": 3,
+      "status": "ok"
+    },
+    {
+      "region": "eu-west-1",
+      "service": "rds:DescribeDBInstances",
+      "type": "aws_db_instance",
+      "count": 1,
+      "status": "ok"
+    },
+    {
+      "region": "eu-west-1",
+      "service": "rds:DescribeDBSubnetGroups",
+      "type": "aws_db_subnet_group",
+      "count": 2,
+      "status": "ok"
+    },
+    {
+      "region": "global",
+      "service": "s3:ListAllMyBuckets",
+      "type": "aws_s3_bucket",
+      "count": 3,
+      "status": "ok"
+    },
+    {
+      "region": "global",
+      "service": "iam:ListRoles",
+      "type": "aws_iam_role",
+      "count": 5,
+      "status": "ok"
+    },
+    {
+      "region": "global",
+      "service": "iam:ListPolicies",
+      "type": "aws_iam_policy",
+      "count": 1,
+      "status": "ok"
+    },
+    {
+      "region": "global",
+      "service": "iam:ListUsers",
+      "type": "aws_iam_user",
+      "count": 0,
+      "status": "ok"
+    },
+    {
+      "region": "global",
+      "service": "iam:ListInstanceProfiles",
+      "type": "aws_iam_instance_profile",
+      "count": 1,
+      "status": "ok"
+    }
+  ]
+}
